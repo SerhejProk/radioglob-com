@@ -645,6 +645,7 @@
       <option value="DE" data-i18n="c_DE">Германия</option>
       <option value="FR" data-i18n="c_FR">Франция</option>
       <option value="IT" data-i18n="c_IT">Италия</option>
+      <optgroup id="europe" label="Европа"></optgroup>
     </select>
     <button class="btn" type="submit" data-i18n="find">Найти</button>
   </form>
@@ -726,8 +727,212 @@ const REGIONS = {
     "3586ad23-e161-4dd2-aaa8-b8dc372ab0e9", // Retro FM Estonia
     "a13e6834-cb4c-423d-912b-d8b25962b88b", // Elmari Kuld (Эстония)
     "b56671bc-2a27-40a2-84ac-5c474217ca8c", // Radiocentras (Литва)
-    "a2624589-8279-4be3-9ea0-514dcd29cef8", // Võmba FM (Эстония)
-    "00f8e948-44c2-43e6-af1b-b9a66ef5bcdf"  // Радио Лента (Литва)
+    "a2624589-8279-4be3-9ea0-514dcd29cef8"  // Võmba FM (Эстония)
+  ]
+};
+// Страны Европы в выпадающем списке (после основных): код, название по-русски и по-английски
+const EUROPE = [
+  ["AT", "Австрия", "Austria"], ["AL", "Албания", "Albania"], ["AD", "Андорра", "Andorra"],
+  ["BE", "Бельгия", "Belgium"], ["BG", "Болгария", "Bulgaria"],
+  ["BA", "Босния и Герцеговина", "Bosnia and Herzegovina"], ["VA", "Ватикан", "Vatican"],
+  ["HU", "Венгрия", "Hungary"], ["GR", "Греция", "Greece"], ["DK", "Дания", "Denmark"],
+  ["IE", "Ирландия", "Ireland"], ["IS", "Исландия", "Iceland"], ["ES", "Испания", "Spain"], ["CY", "Кипр", "Cyprus"],
+  ["LV", "Латвия", "Latvia"], ["LT", "Литва", "Lithuania"], ["LI", "Лихтенштейн", "Liechtenstein"],
+  ["LU", "Люксембург", "Luxembourg"], ["MT", "Мальта", "Malta"], ["MD", "Молдова", "Moldova"],
+  ["MC", "Монако", "Monaco"], ["NL", "Нидерланды", "Netherlands"], ["NO", "Норвегия", "Norway"],
+  ["PT", "Португалия", "Portugal"], ["RO", "Румыния", "Romania"], ["SM", "Сан-Марино", "San Marino"],
+  ["MK", "Северная Македония", "North Macedonia"], ["RS", "Сербия", "Serbia"], ["SK", "Словакия", "Slovakia"],
+  ["SI", "Словения", "Slovenia"], ["TR", "Турция", "Turkey"], ["FI", "Финляндия", "Finland"],
+  ["HR", "Хорватия", "Croatia"], ["ME", "Черногория", "Montenegro"], ["CZ", "Чехия", "Czechia"],
+  ["CH", "Швейцария", "Switzerland"], ["SE", "Швеция", "Sweden"], ["EE", "Эстония", "Estonia"]
+];
+// Станции из списка Сергея «Онлайн-радиостанции Европы» (18.10.2026), которых раньше не было на сайте.
+// При выборе страны они идут первыми, за ними — популярные станции страны из каталога.
+// Проверены 18.10.2026: живые, по https (без переадресации на http), нет в стоп-списке и в реестре РКН (antifilter.download)
+const PICKS = {
+  RU: [ // Россия
+    "e7b0a051-01be-4905-a786-8b9e80223662", // Радио России Санкт-Петербург
+    "b651c095-a1bf-419d-b0bd-c7c3cddd896f", // ЕВРОПА ПЛЮС
+    "bc984302-4281-4b4a-943b-09e6b3cd955c", // Наше радио
+    "008647d2-bb5b-4c4e-a552-dcf803313cc8"  // Радио JAZZ 89.1 256kbps
+  ],
+  DE: [ // Германия
+    "42a73a97-9398-437c-b521-86646a79f82f", // deutschlandfunk
+    "097a7899-d8d7-4cde-a6a2-a0a2d4edb069"  // Rock Antenne
+  ],
+  IT: [ // Италия
+    "7bd0a378-7d60-4363-8699-764af50f30c7", // Rai Radio 1
+    "babc9612-cab4-4bfd-a455-14a612f7c8d6", // RDS
+    "706a6d21-035c-4f18-ac91-8313daeee9bf"  // Rai Radio 3 Classica
+  ],
+  AT: [ // Австрия
+    "fb631dee-a75a-418d-9719-edbb9f4e2025", // ORF Ö1 (128k HLS)
+    "42073ce7-51c8-4148-a60b-3487c30f53b8"  // ORF Radio Wien (290k HLS)
+  ],
+  AL: [ // Албания
+    "1d12e920-2e7c-42f2-ac14-809d9192a99b", // Top Albanian Radio
+    "51469310-07fd-466c-a001-32620a258859"  // CLUB FM
+  ],
+  BE: [ // Бельгия
+    "130f37a8-bcba-4d2d-a39d-a1881df1f185", // Qmusic
+    "78858bff-5418-4eba-9b98-4a6dadbab948"  // Radio 1
+  ],
+  BG: [ // Болгария
+    "930c6825-0da4-41ca-beb9-b53ef7368754", // БНР – Радио София
+    "72ff9fb6-7458-4fe6-878e-0cd608718ab3", // Radio Fresh -Ruse 93,6 FM
+    "f4f82780-1bcb-4f5f-9f58-b0db5af0d568", // Radio Veselina
+    "fea0c23d-7252-460c-a8dd-2db957c128b0"  // Radio 1 Rock (AAC 128)
+  ],
+  BA: [ // Босния и Герцеговина
+    "99db57d2-fae1-4cd9-a9cd-a361274123be", // BH Radio 1
+    "862898ae-b5fd-4bfb-b123-455a9fb221fe", // Radio Sarajevo 90.2
+    "60607676-de23-44cd-8e05-aecbce5332c9", // Radiopostaja Mir - Međugorje
+    "8abede59-7462-4562-b9fb-ab809527e145"  // Radio Vogošća
+  ],
+  VA: [ // Ватикан
+    "67025f0b-0c27-4996-8846-388b49744c3d", // Radio Vaticana Italia
+    "5e5546ea-e811-4351-bb90-1cef3ed5be71", // Radio Vaticana English
+    "10763d62-a6bc-46a9-a05b-9369dc144489"  // Radio Vaticana Español spanish
+  ],
+  HU: [ // Венгрия
+    "48acbf47-f731-4c22-91b2-385d2fbb76c9", // MR1 - Kossuth Rádió
+    "f503d591-56b7-45d2-9a31-df046af717ae", // Rádió 1
+    "79d8bcc0-e8c8-49a7-a160-2b41923b054a"  // Petőfi Rádió
+  ],
+  GR: [ // Греция
+    "ab044907-7d8f-43ad-bb09-8431207aaf5a", // ERT news
+    "b99b6dc0-7b77-4630-a683-1082fbf44156", // En Lefko 87.7
+    "a4210017-fc0c-45a8-a58b-1121bd7adb64", // Rythmos FM.GR
+    "b4489557-58f3-4971-bc3a-c57c9a6b497d", // ΕΡΤ Kosmos
+    "b7e57990-b3ad-44a9-9458-2f8f58dcbde2"  // Rock FM 96.9
+  ],
+  DK: [ // Дания
+    "28b58640-e317-4778-9bba-a1992f8f0bf7", // DR P1 (AAC)
+    "b0f1b100-23b5-4c7b-bdb1-a2c68006d6bf", // DR P3 (AAC)
+    "2fec1d56-0045-44ae-9ead-c975cbcb3af1", // Radio 100
+    "632fe760-a124-4385-9061-6acb4bd14d0f", // The Voice - Danmarks Hitstation
+    "7feafe93-aa70-4661-80e3-f3d3f370ec3d"  // Classic FM (Fyn)
+  ],
+  IE: [ // Ирландия
+    "ca6de309-f3fc-4e52-80e7-eacb885dd318", // RTÉ Radio 1
+    "f11919a5-3545-47a9-a420-80c5be17fe38", // RTÉ 2FM
+    "d0a1da9f-46b3-11e9-aa55-52543be04c81", // Today FM
+    "d037031b-f31e-4298-b36e-654eaad6416e"  // Newstalk
+  ],
+  ES: [ // Испания
+    "4ec5a020-4a66-4d46-a13c-4a7ee4ff5320", // LOS 40
+    "04e50d31-07d9-4e6a-927a-b22fb034eb3c", // Cadena SER - Ràdio Barcelona
+    "da69613a-bae9-4492-aab9-fb96b48249b5", // Radio Clásica
+    "e46649e5-adff-42fb-b991-74d3de402576"  // ROCK FM
+  ],
+  CY: [ // Кипр
+    "83f965c4-a71d-439e-949b-45621908dd8b"  // Rock FM Cyprus
+  ],
+  LV: [ // Латвия
+    "09157387-068a-42c9-8027-9822469388a4", // Latvijas Radio 1
+    "730b7ebf-cd0f-44b2-b24e-8fa7d7263a17", // Latvijas Radio 5 - Pieci.lv
+    "a0897d83-35e9-42d8-9dd9-91e7ed988e9f"  // Radio SWH LV
+  ],
+  LT: [ // Литва
+    "e92f0589-c3d4-4054-8718-8dd204cf03d6"  // ZIP FM
+  ],
+  LU: [ // Люксембург
+    "6a893f37-f749-11e9-bbf2-52543be04c81"  // RTL Radio Lëtzebuerg
+  ],
+  MT: [ // Мальта
+    "d509b24b-d833-4617-b278-88eba4ee8287", // 89.7 Bay
+    "bc95a0d2-666d-400d-9d9b-bba9f50277b3"  // Calypso Radio
+  ],
+  MD: [ // Молдова
+    "7ff4a334-50ab-439a-ba82-47a3c2dd0082", // Radio Plai
+    "3d8b1284-142e-4b13-a141-24c458c96a2a", // Jurnal Fm
+    "d86169ad-3b18-4c84-a330-9dd5b0a0e2a5", // Radio Noroc Moldova
+    "504847b7-6baa-4fce-a62c-e0e6218fe562"  // Vocea Basarabiei
+  ],
+  MC: [ // Монако
+    "469a80f5-755e-11e9-af37-52543be04c81"  // Radio Monte Carlo Italia
+  ],
+  NL: [ // Нидерланды
+    "005636e9-2142-497b-8f51-606d536fb18a", // NPO Radio 2
+    "0c62b9d7-8de0-4693-9842-6bf9b50229d3", // NPO 3FM
+    "3b232427-05ab-4193-af6e-b19bf8e78963", // NPO Radio 4
+    "b20de429-e1b3-4624-a1ac-12e2bf0cadb0", // Sky Radio
+    "f0ab0c5c-7125-476c-97a4-2eabc14f5f05"  // 538 Radio
+  ],
+  NO: [ // Норвегия
+    "ebc6ab9f-57be-4ee8-9209-327ee71c7a86", // Nrk P1 Stor-Oslo
+    "17be0284-0ab4-453f-9e98-f674df46a919", // NRK P3
+    "8ea65019-e270-4737-868c-b4fc754cb4f1", // P4 Norge (AAC HQ)
+    "80b3c98b-8a97-4b78-a53e-3e018ebea04c"  // Radio Norge
+  ],
+  PT: [ // Португалия
+    "fd6b0dc7-1684-4677-8a63-0c28d988c4b0", // Antena 1 - Main
+    "856155ee-f434-4a45-9225-391c0e618b8b", // RFM
+    "cc461784-3150-4a34-81c5-2116fe024740"  // TSF Rádio Notícias
+  ],
+  RO: [ // Румыния
+    "8158142a-c13e-4073-ace3-ab574f0285bb", // Radio România Actualități
+    "7912ccbd-e75d-425c-85b9-0b2ac2a4b213", // Radio ZU
+    "b75eff2e-8645-4f4e-b82d-378b2d678001", // ROMÂNIA  Cultural
+    "775eeca3-f820-4e76-904a-26d8f8797e8a"  // Pro FM -stația Cluj Napoca 99,8 FM
+  ],
+  SM: [ // Сан-Марино
+    "0f1d84d0-7370-11e9-af37-52543be04c81", // Radio San Marino
+    "bd06bffb-7cd9-4d12-9100-e9471b67f25a"  // Radio San Marino Classic
+  ],
+  MK: [ // Северная Македония
+    "de34f39b-d35d-4570-a6fe-92d0031a1681", // Makedonsko Radio 1 - Radio Skopje
+    "cf5dc407-3f39-4608-ba7d-5cb4ce3235d8"  // Radio Kanal 77 Skopje, Macedonia
+  ],
+  RS: [ // Сербия
+    "dd6ef396-b24c-46b6-af9a-05f4ef18ffe7", // Radio Beograd 1
+    "ee16d62a-c4ba-4bb0-be5b-2ddaa571a0ba", // Radio S1
+    "83aee402-c381-458e-b471-16a806e8dd69", // Play Radio Serbia
+    "b6c5a106-4ea9-4751-a406-42b477033ec8"  // Naxi
+  ],
+  SK: [ // Словакия
+    "90ad59d7-68b5-4a49-addd-9498843da6f2", // Radio Slovensko
+    "a39a5e69-81c7-4823-aabd-202472fc644b", // RÁDIO EXPRES
+    "576e64fd-74ac-11ea-b1cf-52543be04c81", // Radio FM
+    "cb61763d-d635-4983-82c1-4a6a1e8ad17b"  // Europa 2
+  ],
+  SI: [ // Словения
+    "9dd2f8e5-11f7-4fd9-aa10-c93df36965ee", // Radio Slovenija 1
+    "e599b489-da1f-4b5e-ac17-3e727980ac6b", // Radio Ognjišče
+    "caf0f3e6-d900-4045-871d-7da384101151", // Radio 1
+    "e655e587-ecf7-4358-9223-5c13b3c12bf3"  // Radio City
+  ],
+  TR: [ // Турция
+    "c1e2e152-71d0-458f-9c41-5fb54a33dbf8", // TRT Radyo 1
+    "0a2c3506-a136-40f2-b008-38daf2b12fd6", // TRT FM
+    "dd307ed2-052d-4373-85c6-24f15f96d89c", // Power FM Türkiye
+    "b3e6320b-0ffc-4d4e-a999-2467897b17e6"  // Radyo Fenomen
+  ],
+  FI: [ // Финляндия
+    "c8b240ad-1e4c-470e-a5dc-7e48915c4564"  // Radio Rock
+  ],
+  HR: [ // Хорватия
+    "170cfe25-bbdc-43ec-9c1a-c1273ffbc234", // HRT Prvi program
+    "2efbb8fa-330c-403b-aa71-90f64fe175ec", // Radio 101 Rock
+    "51501335-c294-4084-97d6-6ee4e8441c0d"  // Otvoreni Radio
+  ],
+  CZ: [ // Чехия
+    "ffc0040e-5e9c-4e08-8c57-94db090c9e7a", // CRo Radiozurnal
+    "1b568695-9ce7-493d-ba72-d9b3d5e0a364", // Evropa 2 - Radio
+    "28c96823-53d0-46b4-bc3d-eb29350db6f5", // Rádio 1
+    "927edba2-7db7-40f2-96bd-8a9316de90f4", // FREKVENCE 1
+    "55e08718-a4de-49c3-958a-e8a8f4de21f6"  // Čro Vltava Flac
+  ],
+  CH: [ // Швейцария
+    "8f076a3b-5b85-4fc4-8989-a629caf2d912", // Radio SRF 1 (AAC 192)
+    "3a19f974-53ee-4805-8432-4a592be49cd1"  // Radio 24
+  ],
+  SE: [ // Швеция
+    "d1620588-c6f3-4e40-a828-a0fd3f945c07"  // RIX FM
+  ],
+  EE: [ // Эстония
+    "6b2be64f-bc1e-4076-b447-853c4da80cb8", // Vikerraadio
+    "619c88a6-f858-4c39-861e-da47fcd77b85"  // Star Fm
   ]
 };
 
@@ -928,7 +1133,7 @@ const T = {
     q: "Станция или жанр…", find: "Найти", httpsOnly: "Только защищённые потоки (https)",
     c_all: "Все страны", c_RU: "Россия", c_BY: "Беларусь", c_KZ: "Казахстан", c_PL: "Польша",
     c_latam: "Латинская Америка", c_baltic: "Прибалтика", c_US: "США", c_GB: "Великобритания",
-    c_DE: "Германия", c_FR: "Франция", c_IT: "Италия",
+    c_DE: "Германия", c_FR: "Франция", c_IT: "Италия", europe: "Европа",
     fileTitle: "Радио работает только в браузере", tgTitle: "Откройте радио в браузере",
     fileText: "Вы открыли файл. Нажмите кнопку — радио откроется в Safari или Chrome.",
     tgText: "В Telegram звук пропадёт, как только вы свернёте приложение.",
@@ -956,7 +1161,7 @@ const T = {
     q: "Station or genre…", find: "Search", httpsOnly: "Secure streams only (https)",
     c_all: "All countries", c_RU: "Russia", c_BY: "Belarus", c_KZ: "Kazakhstan", c_PL: "Poland",
     c_latam: "Latin America", c_baltic: "Baltic states", c_US: "USA", c_GB: "United Kingdom",
-    c_DE: "Germany", c_FR: "France", c_IT: "Italy",
+    c_DE: "Germany", c_FR: "France", c_IT: "Italy", europe: "Europe",
     fileTitle: "The radio only works in a browser", tgTitle: "Open the radio in your browser",
     fileText: "You opened a file. Tap the button and the radio will open in Safari or Chrome.",
     tgText: "In Telegram the sound stops as soon as you minimize the app.",
@@ -996,6 +1201,11 @@ function applyLang() {
     el.title = t(el.getAttribute("data-i18n-title")); el.setAttribute("aria-label", el.title); });
   document.querySelectorAll(".lang").forEach(b => b.classList.toggle("on", b.getAttribute("data-lang") === lang));
   document.querySelectorAll(".chip").forEach((c, i) => { if (PRESETS[i]) c.textContent = presetLabel(PRESETS[i]); });
+  // Страны Европы: группа в выпадающем списке, названия на языке сайта
+  const eu = $("europe");
+  eu.label = t("europe");
+  if (!eu.children.length) EUROPE.forEach(c => { const o = document.createElement("option"); o.value = c[0]; eu.appendChild(o); });
+  [].forEach.call(eu.children, (o, i) => { o.textContent = lang === "en" ? EUROPE[i][2] : EUROPE[i][1]; });
   renderSkinOpts();
 }
 // Во встроенном браузере Telegram кнопка ведёт во внешний браузер:
@@ -1048,6 +1258,22 @@ async function loadIds(ids) {
   }
 }
 
+// Страна из выпадающего списка: сначала станции из ручного списка PICKS, за ними популярные станции страны.
+// Повторы склеит render()
+async function loadCountry(cc) {
+  const ids = PICKS[cc] || [];
+  const p = new URLSearchParams({ limit: 120, hidebroken: "true", order: "clickcount", reverse: "true", countrycode: cc });
+  $("status").textContent = t("loading");
+  $("grid").innerHTML = "";
+  try {
+    const res = await Promise.all([ids.length ? api("/json/stations/byuuid?uuids=" + ids.join(",")) : [], api("/json/stations/search?" + p)]);
+    res[0].sort((a, b) => ids.indexOf(a.stationuuid) - ids.indexOf(b.stationuuid));
+    render(res[0].concat(res[1]));
+  } catch (e) {
+    $("status").textContent = t("loadFail");
+  }
+}
+
 async function search({ name = "", tag = "", country = "" } = {}) {
   const p = new URLSearchParams({ limit: 120, hidebroken: "true", order: "clickcount", reverse: "true" });
   if (name) p.set("name", name);
@@ -1075,14 +1301,19 @@ async function search({ name = "", tag = "", country = "" } = {}) {
 //    проектами («Крым.Реалии», «Настоящее время», «Азаттык», «Свабода»…), «Голос Америки» (VOA),
 //    «Дождь», «Эхо», «Медуза», «Белсат», «Еврорадио», «Новая газета Европа», The Insider;
 //    а также спам-станции с тегом «to people of russia…».
+//    Плюс станции, чей сайт или поток в реестре блокировок РКН (сверка 18.10.2026 по antifilter.download):
+//    Yle (Финляндия), LRT (Литва), Sveriges Radio (Швеция), TRM (Молдова), сайт Польского радио, 15min.lt (M-1),
+//    русские службы ERR (Эстония) и LSM (Латвия).
+//    Повторная проверка 18.10.2026: «Радио Свобода» на Балканах (Slobodna Evropa), «Europa Liberă» (Молдова), «Evropa e Lirë» — семейство RFE/RL;
+//    RFI и Deutsche Welle (rfi.fr, dw.com в реестре); Infovojna (Словакия); Radio Marca; «Радио Лента» (worldreport.today); 90s-eurodance.ru.
 // 3) Станции 18+: «18+» в названии, эротика и мат (теги erotic, explicit, nsfw).
 //    Radio Essex, «__SEX__» от rautemusik (обычные хиты) и канал The Sex Pistols не задеваем.
 const ADULT_OK = /rautemusik|rm\.fm/i;
 const UA_NAME = /украин|україн|ukrain|ukraiņ|радіо/i;
 const UA_LANG = /^(ukrainian|ukranian|ukrainisch|украинский|українська)$/i;
 const UA_URL = /\/\/[^\/:]*\.ua([\/:]|$)/i;
-const BLOCKED_NAME = /свобода|свабода|svoboda|svaboda|голос америки|voice of america|\bvoa\b|дождь тв|телеканал дождь|tv rain|^эхо( ?fm)?( online)?$|^echo эхо|крым\.? ?реалии|настоящее время|азаттык|azattyk|медуза|meduza|белсат|belsat|еврорадио|euroradio|радио азатлык/i;
-const BLOCKED_URL = /svoboda\.org|svaboda\.org|rferl\.org|krymr\.com|currenttime\.tv|azattyq\.org|azattyk\.org|azatutyun\.am|ozodi\.org|ozodlik\.org|radiofarda\.com|idelreal\.org|kavkazr\.com|sibreal\.org|severreal\.org|rfe-ingest|rfe0\d\.akacast|radiojar\.com\/hcrb063nn3quv|voanews\.com|golos-ameriki|tvrain|echofm\.online|echo02\.online|noasrv\.caster\.fm:10034|meduza\.io|belsat\.eu|euroradio\.fm|novayagazeta\.eu|theins\.ru/i;
+const BLOCKED_NAME = /свобода|свабода|svoboda|svaboda|голос америки|voice of america|\bvoa\b|дождь тв|телеканал дождь|tv rain|^эхо( ?fm)?( online)?$|^echo эхо|крым\.? ?реалии|настоящее время|азаттык|azattyk|медуза|meduza|белсат|belsat|еврорадио|euroradio|радио азатлык|slobodna evropa|europa liber[aă]|evropa e lir[eë]|info.?vojna|\brfi\b(?! ?1021)|^\W*(deutsche welle\b|dw\b)/i;
+const BLOCKED_URL = /svoboda\.org|svaboda\.org|rferl\.org|krymr\.com|currenttime\.tv|azattyq\.org|azattyk\.org|azatutyun\.am|ozodi\.org|ozodlik\.org|radiofarda\.com|idelreal\.org|kavkazr\.com|sibreal\.org|severreal\.org|rfe-ingest|rfe0\d\.akacast|radiojar\.com\/hcrb063nn3quv|voanews\.com|golos-ameriki|tvrain|echofm\.online|echo02\.online|noasrv\.caster\.fm:10034|meduza\.io|belsat\.eu|euroradio\.fm|novayagazeta\.eu|theins\.ru|[\/.]yle\.fi|[\/.]lrt\.lt|sverigesradio\.se|[\/.]trm\.md|www\.polskieradio\.pl|[\/.]15min\.lt|rus\.err\.ee|rus\.lsm\.lv|slobodnaevropa\.org|europalibera\.org|evropaelire\.org|[\/.]rfi\.fr|[\/.]dw\.com|infovojna\.|www\.marca\.com|worldreport\.today|90s-eurodance\.ru|[\/.]euronews\.com/i;
 const BLOCKED_TAG = /to people of russia|\b(erotic|erotica|explicit|nsfw|xxx|porn)\b|18\+/i;
 const ADULT_NAME = /18\+|\bsex\b(?! pistols)|sexfm|erotic|эрот|трахтенберг/i;
 function allowed(s) {
@@ -1528,8 +1759,10 @@ $("form").onsubmit = e => {
   e.preventDefault();
   setChip(-1);
   const c = $("country").value;
+  const q = $("q").value.trim();
   if (REGIONS[c]) loadIds(REGIONS[c]);
-  else search({ name: $("q").value.trim(), country: c });
+  else if (c && !q) loadCountry(c);
+  else search({ name: q, country: c });
 };
 
 // Старт: последняя станция в плеере + популярное в России
