@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f5"/>
+      <stop offset="1" stop-color="#d9dee6"/>
+    </linearGradient>
+    <linearGradient id="disc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f5"/>
+      <stop offset="1" stop-color="#dde2e9"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a8fd8"/>
+      <stop offset="1" stop-color="#2b6cb0"/>
+    </linearGradient>
+    <!-- Неоморфная «выпуклость»: тёмная тень справа снизу и светлая слева сверху -->
+    <filter id="raise" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="14" dy="14" stdDeviation="14" flood-color="#a9b1bd" flood-opacity="0.9"/>
+      <feDropShadow dx="-12" dy="-12" stdDeviation="12" flood-color="#ffffff" flood-opacity="1"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="3" dy="4" stdDeviation="4" flood-color="#1e4e85" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Фон с едва заметными радиоволнами -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g fill="none" stroke="#2b6cb0" stroke-opacity="0.07" stroke-width="4">
+    <circle cx="256" cy="256" r="232"/>
+    <circle cx="256" cy="256" r="282"/>
+  </g>
+
+  <!-- Выпуклая «кнопка» -->
+  <circle cx="256" cy="256" r="178" fill="url(#disc)" filter="url(#raise)"/>
+
+  <!-- Антенна: точка и волны в обе стороны -->
+  <g filter="url(#soft)" fill="none" stroke="url(#blue)" stroke-linecap="round" stroke-width="20">
+    <path d="M216 216 A56 56 0 0 0 216 296"/>
+    <path d="M296 216 A56 56 0 0 1 296 296"/>
+    <path d="M186 186 A98 98 0 0 0 186 326"/>
+    <path d="M326 186 A98 98 0 0 1 326 326"/>
+    <path d="M157 157 A140 140 0 0 0 157 355" stroke-opacity="0.55"/>
+    <path d="M355 157 A140 140 0 0 1 355 355" stroke-opacity="0.55"/>
+  </g>
+  <circle cx="256" cy="256" r="24" fill="url(#blue)" filter="url(#soft)"/>
+</svg>
