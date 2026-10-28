@@ -649,6 +649,7 @@
     <div class="langs" role="group" aria-label="Язык / Language">
       <button class="lang" type="button" data-lang="ru">RU</button>
       <button class="lang" type="button" data-lang="en">EN</button>
+      <button class="lang" type="button" data-lang="fr">FR</button>
     </div>
     <button class="skin-btn" id="skinBtn" type="button" aria-expanded="false" aria-controls="skins">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7h2.1A4.3 4.3 0 0 0 21 11c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="11" r="1.4" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.4" fill="currentColor"/><circle cx="15" cy="7.6" r="1.4" fill="currentColor"/></svg>
@@ -724,8 +725,10 @@
 window.onerror = function (msg, src, line) {
   if (msg === "Script error.") return; // ошибки чужих скриптов (hls.js с CDN) не показываем
   var el = document.getElementById("status");
-  if (el) el.textContent = document.documentElement.lang === "en"
+  var l = document.documentElement.lang;
+  if (el) el.textContent = l === "en"
     ? "Error: " + msg + " (line " + line + "). Please send this text to the developer."
+    : l === "fr" ? "Erreur : " + msg + " (ligne " + line + "). Envoyez ce texte au développeur."
     : "Ошибка: " + msg + " (строка " + line + "). Пришлите этот текст разработчику.";
 };
 </script>
@@ -977,11 +980,11 @@ const PICKS = {
 };
 
 const PRESETS = [
-  { label: "🏠 Главная", en: "🏠 Home", home: true },
-  { label: "★ Избранное", en: "★ Favorites", fav: true },
-  { label: "📒 Записная книжка", en: "📒 Track notebook", notes: true },
+  { label: "🏠 Главная", en: "🏠 Home", fr: "🏠 Accueil", home: true },
+  { label: "★ Избранное", en: "★ Favorites", fr: "★ Favoris", fav: true },
+  { label: "📒 Записная книжка", en: "📒 Track notebook", fr: "📒 Carnet de morceaux", notes: true },
   // «Африка» и «Индия» — вручную: самые слушаемые станции, проверены 17.10.2026 (https, нет в реестре блокировок РКН)
-  { label: "Африка", en: "Africa", ids: [
+  { label: "Африка", en: "Africa", fr: "Afrique", ids: [
     "a3c93ca9-9891-4249-a805-d622dadeed21", // Cool FM, Лагос (Нигерия)
     "1dfcc339-6292-4bf1-8b21-5c4a099ecd7e", // Wazobia FM, Лагос (Нигерия)
     "ac15c045-6f16-4021-b35c-00b265b7201d", // Kameme FM (Кения)
@@ -993,7 +996,7 @@ const PRESETS = [
     "056d990a-7b48-4e95-b91e-ce59ca2701e8", // Galaxy FM (Уганда)
     "351eaaf0-2d2a-446b-8288-9f850588ba47"  // Top Congo FM (Конго)
   ] },
-  { label: "Индия", en: "India", ids: [
+  { label: "Индия", en: "India", fr: "Inde", ids: [
     "cdd3b5a0-47f6-46d5-8209-b78e8b10ff6e", // Radio Mirchi Hindi
     "6b36ba4f-6d29-4272-b3c0-9aeeb64e61ec", // Mirchi Top 20
     "0e5dfcc8-99e2-4fed-a232-7f4bf23ba3c3", // Mirchi Love
@@ -1005,9 +1008,9 @@ const PRESETS = [
     "9ae30654-b1a6-4eff-81f3-6400d105b340", // Rafi Hit Songs
     "33fcdf94-5605-49bb-8e34-206f38c335dc"  // Goldy Evergreen
   ] },
-  { label: "Поп", en: "Pop", tag: "pop", bg: "pop" },
+  { label: "Поп", en: "Pop", fr: "Pop", tag: "pop", bg: "pop" },
   // «K-pop» — вручную, без украинских станций. Проверены 17.10.2026: https, нет в реестре блокировок РКН
-  { label: "K-pop", en: "K-pop", bg: "pop", ids: [
+  { label: "K-pop", en: "K-pop", fr: "K-pop", bg: "pop", ids: [
     "5144690c-8201-4394-83a4-06243ee848c3", // Europa Plus K-Pop
     "57b61666-0387-4732-a99b-0609dc1d36f6", // DFM K-POP
     "2e53ff8e-1d21-4e04-b0e9-f68257c4e7e9", // Only Hits K-Pop (США)
@@ -1022,16 +1025,16 @@ const PRESETS = [
     "168b79d5-be7b-436f-b144-759696655d6d", // HIT FM K-Pop Hits (Молдова)
     "2973ff08-fb80-4281-8b7a-33bd213b06d4"  // Juka Radio K-pop
   ] },
-  { label: "Рок", en: "Rock", tag: "rock", bg: "rock" },
-  { label: "Джаз", en: "Jazz", tag: "jazz", bg: "jazz" },
-  { label: "Классика", en: "Classical", tag: "classical", bg: "classical" },
-  { label: "Электроника", en: "Electronic", tag: "electronic", bg: "electronic" },
-  { label: "Ретро", en: "Retro", tag: "oldies", bg: "retro" },
-  { label: "Lounge / Chill", en: "Lounge / Chill", tag: "chillout", bg: "chill" },
+  { label: "Рок", en: "Rock", fr: "Rock", tag: "rock", bg: "rock" },
+  { label: "Джаз", en: "Jazz", fr: "Jazz", tag: "jazz", bg: "jazz" },
+  { label: "Классика", en: "Classical", fr: "Classique", tag: "classical", bg: "classical" },
+  { label: "Электроника", en: "Electronic", fr: "Électro", tag: "electronic", bg: "electronic" },
+  { label: "Ретро", en: "Retro", fr: "Rétro", tag: "oldies", bg: "retro" },
+  { label: "Lounge / Chill", en: "Lounge / Chill", fr: "Lounge / Chill", tag: "chillout", bg: "chill" },
   // «Медитация» — вручную: русские станции первыми, дальше эмбиент, тихая классика, звуки природы, мантры.
   // Проверены 18.10.2026: живые, по https, нет в стоп-списке и в реестре блокировок РКН.
   // Radio Art (хоралы, сольфеджио) не вошли: в каталоге только по http
-  { label: "Медитация", en: "Meditation", bg: "zen", ids: [
+  { label: "Медитация", en: "Meditation", fr: "Méditation", bg: "zen", ids: [
     "43e64ad6-ac2c-4765-8b57-a69dd0aca6ce", // Монте-Карло Meditation
     "78766053-a2d1-4cd8-9042-7eb8fde7da16", // Relax FM для медитации
     "3018f5e2-cd55-41cd-8833-c484f24c1d69", // Звуки природы
@@ -1056,7 +1059,7 @@ const PRESETS = [
   // «Наука» — подобранный вручную список (по тегу science в каталоге в основном старые фантастические спектакли).
   // Проверены 17.10.2026: живые и по https. Порядок здесь = порядок на экране, русская станция первой
   // «Фолк» — тоже вручную: по тегу folk в каталоге много случайного (KEXP, поп). Проверены 17.10.2026
-  { label: "Фолк", en: "Folk", bg: "folk", ids: [
+  { label: "Фолк", en: "Folk", fr: "Folk", bg: "folk", ids: [
     "d68e43d8-3c7b-4bb8-9f22-4bb32bd750e0",
     "fee6751a-ad1a-4f9e-91cd-21269cc3b682",
     "28c0dc1a-9089-4dda-bf6e-7c3a45646212",
@@ -1071,7 +1074,7 @@ const PRESETS = [
     "b1939f76-1417-4058-8657-403e6fcf45ea",
     "aa6ee95d-e208-4592-a121-047056106596"
   ] },
-  { label: "Наука", en: "Science", bg: "science", ids: [
+  { label: "Наука", en: "Science", fr: "Science", bg: "science", ids: [
     "c9773ed8-e9bd-4487-92a2-e8b1dbbaf891",
     "3d4c97c7-e122-4304-b8c8-52336683bda1",
     "21ab678c-ff19-4314-9969-165e15b4210d",
@@ -1086,7 +1089,7 @@ const PRESETS = [
     "3c2da98e-b7b7-4192-8ca4-3a625a301629"
   ] },
   // «Обучение» — вручную: языки (английский, китайский), история, лекции. Проверены 17.10.2026, все по https
-  { label: "Обучение", en: "Learning", bg: "study", ids: [
+  { label: "Обучение", en: "Learning", fr: "Apprendre", bg: "study", ids: [
     "3fefef81-0b20-4193-9dc7-c5839f5391eb",
     "3f537d76-6041-4200-8804-c5b9f618ab5a",
     "49476d42-0ff1-4de2-b083-0c55a7231d55",
@@ -1104,7 +1107,7 @@ const PRESETS = [
   // Проверены 18.10.2026: живые, по https, нет в стоп-списке и в реестре блокировок РКН.
   // «Радио Книга», «Радио Фантастики», «Модель для сборки», «Милли Китап» не отвечали — не включены.
   // Без повторов с другими подборками: «Культура», Historyradio.org, Indie Beat Spoken Word — в «Обучении», Сказка FM — в «Детям»
-  { label: "Литература", en: "Literature", bg: "books", ids: [
+  { label: "Литература", en: "Literature", fr: "Littérature", bg: "books", ids: [
     "7bc931dc-3fac-43d6-ba2d-1b5c6db73e56", // Радио Книга Вслух — аудиокниги
     "8dd1bda9-26b8-4312-ad67-b3d98eaf439a", // «Отклик» — русская поэзия
     "4d500348-dfbd-449e-8fbe-59d4fcd2ce90", // AudioBook Radio (США)
@@ -1115,7 +1118,7 @@ const PRESETS = [
     "9085bd94-5e3d-4d15-a223-0588c235e11e"  // Rádio Litera (Словакия)
   ] },
   // «Детям» — вручную: русские станции первыми, дальше проверенные зарубежные. Проверены 17.10.2026
-  { label: "Детям", en: "Kids", bg: "kids", ids: [
+  { label: "Детям", en: "Kids", fr: "Enfants", bg: "kids", ids: [
     "464bcd7d-6be6-4ae2-9232-38dda51effc7",
     "3f165fb8-873a-413b-8e09-ed389d9e0d18",
     "4c91b144-6ca1-462e-ab10-070ffb56a3b8",
@@ -1133,7 +1136,7 @@ const PRESETS = [
   ] },
   // «Юмор» — вручную: русские станции первыми, дальше зарубежные. Без украинских и 18+.
   // Проверены 17.10.2026: живые и по https. Основной «Юмор ФМ» и «Радио РБЖ» не отвечали — не включены
-  { label: "Юмор", en: "Comedy", bg: "humor", ids: [
+  { label: "Юмор", en: "Comedy", fr: "Humour", bg: "humor", ids: [
     "fc4e58a6-82b7-4a62-90c0-465f89d87603", // ЮморФМ: Стендапы
     "34458168-0aaa-44b4-abb9-aebced9d895e", // Женский Stand Up
     "6efab7cc-075c-413b-b231-23a6dc2bf17f", // Stand Up (101.ru)
@@ -1148,7 +1151,7 @@ const PRESETS = [
     "64179b77-7c6f-4e74-af5b-4bf3b5a1265a", // Rire et Chansons Sketches (Франция)
     "6e3b295f-54be-4c3c-8300-798150ddd940"  // FFN Comedy (Германия)
   ] },
-  { label: "Новости", en: "News", tag: "news" },
+  { label: "Новости", en: "News", fr: "Infos", tag: "news" },
 ];
 
 const $ = id => document.getElementById(id);
@@ -1227,13 +1230,46 @@ const T = {
     notesBar: "The notebook is stored in the radio on this device — your phone and computer each have their own.",
     playSt: "Play the station", yt: "Search on YouTube", ya: "Search on Yandex Music", del: "Remove from the notebook",
     theme: "Theme", themeLabel: "Color theme", roAir: "● ON AIR", roPause: "○ PAUSED", roCodec: "CODEC", roBitrate: "BITRATE", roCountry: "COUNTRY"
+  },
+  fr: {
+    brand: "RADIO", sub: "Des milliers de stations du monde entier.", install: "⤓ Installer comme application",
+    q: "Station ou genre…", find: "Chercher", httpsOnly: "Flux sécurisés uniquement (https)",
+    c_all: "Tous les pays", c_RU: "Russie", c_BY: "Biélorussie", c_KZ: "Kazakhstan", c_PL: "Pologne",
+    c_latam: "Amérique latine", c_baltic: "Pays baltes", c_US: "États-Unis", c_GB: "Royaume-Uni",
+    c_DE: "Allemagne", c_FR: "France", c_IT: "Italie", europe: "Europe",
+    contact: "Proposer une station ou nous écrire :",
+    checkAll: "Tout cocher", uncheckAll: "Tout décocher", cMain: "Principaux",
+    cHint: "Cochez un pays pour ajouter son bouton à l’écran d’accueil. Touchez le nom pour voir ses stations.",
+    fileTitle: "La radio ne fonctionne que dans un navigateur", tgTitle: "Ouvrez la radio dans votre navigateur",
+    fileText: "Vous avez ouvert un fichier. Touchez le bouton et la radio s’ouvrira dans Safari ou Chrome.",
+    tgText: "Dans Telegram, le son s’arrête dès que vous réduisez l’application.",
+    openBtn: "Ouvrir dans le navigateur ↗", openSafari: "Ouvrir dans Safari ↗",
+    tgHint: "Si le bouton ne marche pas : touchez ⋯ en haut à droite → « Ouvrir dans Safari » / « Ouvrir dans le navigateur ».",
+    statusInit: 'Si aucune station n’apparaît, ouvrez la radio dans Safari ou Chrome : <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a>',
+    playTitle: "Lecture / pause", choose: "Choisissez une station", saveTitle: "Enregistrer le morceau dans le carnet",
+    quieter: "Moins fort", louder: "Plus fort", volume: "Volume",
+    catalogDown: "Catalogue indisponible", loading: "Chargement des stations…",
+    loadFail: "Impossible de charger le catalogue. Vérifiez votre connexion et réessayez.",
+    found: "Stations trouvées : {n}", nothing: "Aucun résultat. Essayez une autre recherche ou décochez « https uniquement ».",
+    favTitle: "Ajouter aux favoris", favEmpty: "Rien pour l’instant. Touchez ☆ à côté d’une station pour l’ajouter.",
+    connecting: "Connexion…", tryOther: "Essai d’une autre adresse du flux…", onAir: "À l’antenne : ",
+    noAnswer: "La station ne répond pas — choisissez-en une autre", paused: "En pause — touchez ▶",
+    buffering: "Mise en mémoire tampon…", resume: "Touchez ▶ pour reprendre",
+    askSong: "La station n’indique pas le titre. Écrivez ce qui passe (ou laissez vide pour enregistrer la station et l’heure) :",
+    already: "Ce morceau est déjà dans le carnet.", saved: "Enregistré dans le carnet : ", tracks: "Morceaux enregistrés : {n}",
+    notesEmpty: "Rien pour l’instant. Pendant une chanson, touchez ♥ dans le lecteur en bas pour l’enregistrer ici.",
+    notesBar: "Le carnet est stocké dans la radio sur cet appareil — téléphone et ordinateur ont chacun le leur.",
+    playSt: "Écouter la station", yt: "Chercher sur YouTube", ya: "Chercher sur Yandex Music", del: "Retirer du carnet",
+    theme: "Thème", themeLabel: "Thème de couleur", roAir: "● À L’ANTENNE", roPause: "○ EN PAUSE", roCodec: "CODEC", roBitrate: "DÉBIT", roCountry: "PAYS"
   }
 };
-let lang = (location.search.match(/lang=(ru|en)/) || [])[1] || store("radio.lang") ||
-  (/^(ru|be|kk|uk)/i.test(navigator.language || "") ? "ru" : "en");
+let lang = (location.search.match(/lang=(ru|en|fr)/) || [])[1] || store("radio.lang") ||
+  (/^(ru|be|kk|uk)/i.test(navigator.language || "") ? "ru" : /^fr/i.test(navigator.language || "") ? "fr" : "en");
 if (!T[lang]) lang = "ru";
 function t(key, n) { return (T[lang][key] || T.ru[key] || key).replace("{n}", n); }
-function presetLabel(p) { return lang === "en" && p.en ? p.en : p.label; }
+function presetLabel(p) { return lang !== "ru" && p[lang] ? p[lang] : lang !== "ru" && p.en ? p.en : p.label; }
+// Страны Европы: по-французски — названия из браузера по коду страны
+function euName(e) { return lang === "fr" ? countryName({ countrycode: e[0], country: e[2] }) : lang === "en" ? e[2] : e[1]; }
 // Переводим всё, что размечено data-i18n* в HTML, и подписи подборок
 function applyLang() {
   document.documentElement.lang = lang;
@@ -1250,7 +1286,7 @@ function applyLang() {
   const eu = $("europe");
   eu.label = t("europe");
   if (!eu.children.length) EUROPE.forEach(c => { const o = document.createElement("option"); o.value = c[0]; eu.appendChild(o); });
-  [].forEach.call(eu.children, (o, i) => { o.textContent = lang === "en" ? EUROPE[i][2] : EUROPE[i][1]; });
+  [].forEach.call(eu.children, (o, i) => { o.textContent = euName(EUROPE[i]); });
   renderSkinOpts();
 }
 // Во встроенном браузере Telegram кнопка ведёт во внешний браузер:
@@ -1815,7 +1851,7 @@ function countryCodes() {
 function ccName(cc) {
   if (!cc) return t("c_all");
   const e = EUROPE.find(c => c[0] === cc);
-  return e ? (lang === "en" ? e[2] : e[1]) : t("c_" + cc);
+  return e ? euName(e) : t("c_" + cc);
 }
 // В окошке стран последняя выбранная страна не запоминается (просьба Сергея, 28.10.2026):
 // станции страны грузятся сразу, а окошко и поиск снова «Все страны»
@@ -1944,16 +1980,16 @@ if (last) {
 // Темы оформления: слушатель выбирает кнопкой «Тема», выбор запоминается в этом браузере.
 // Пустой id — стандартный неоморфизм (день/ночь, фоны под жанры). Узоры фона рисуются только для выбранной темы
 const SKINS = [
-  { id: "", ru: "Неоморфизм", en: "Soft UI", sw: "linear-gradient(135deg, #ffffff, #e4e8ee 50%, #b8bec7)" },
-  { id: "minimal", ru: "Минимализм", en: "Minimal", sw: "radial-gradient(circle at 65% 40%, #e5484d 0 3px, transparent 4px), repeating-radial-gradient(circle at 65% 40%, transparent 0 7px, rgba(0,0,0,.2) 7px 8px), #fafaf8" },
-  { id: "glow", ru: "Неон", en: "Neon glow", sw: "radial-gradient(circle at 25% 25%, #7c3aed, transparent 60%), radial-gradient(circle at 80% 85%, #39ff88, transparent 55%), #06060b" },
-  { id: "vintage", ru: "Ретро-приёмник", en: "Vintage radio", sw: "linear-gradient(transparent 30%, #2a1608 30% 58%, transparent 58%), linear-gradient(90deg, #4a2a16, #73462a 50%, #4a2a16)" },
-  { id: "cyber", ru: "Synthwave", en: "Synthwave", sw: "radial-gradient(circle at 50% 62%, #ffcf5c 0 7px, #ff2975 8px 9px, transparent 10px), linear-gradient(#1d0636 0 60%, #ff2975 60% 63%, #0a0118 63%)" },
-  { id: "glass", ru: "Стекло", en: "Glass", sw: "radial-gradient(circle at 20% 20%, #ff5fbf, transparent 55%), radial-gradient(circle at 85% 40%, #4dd8ff, transparent 50%), radial-gradient(circle at 45% 95%, #ffb057, transparent 55%), #160f33" },
-  { id: "cassette", ru: "Кассета Lo-Fi", en: "Lo-Fi cassette", sw: "linear-gradient(#2b1d3a, #a95d6c 60%, #e59a63)" },
-  { id: "pop", ru: "Поп-арт", en: "Pop art", sw: "radial-gradient(circle, #ff3d7f 0 30%, transparent 33%) 0 0 / 7px 7px, #ffd23f" },
-  { id: "studio", ru: "Студия", en: "Studio", sw: "repeating-linear-gradient(90deg, transparent 0 4px, #0b0f14 4px 6px), linear-gradient(to top, #3fb950 0 40%, #d29922 40% 60%, #0b0f14 60%)" },
-  { id: "art", ru: "Обложка", en: "Cover art", sw: "conic-gradient(from 40deg, #ff7a59, #7b2ff7, #00b4d8, #ffcf5c, #ff7a59)" }
+  { id: "", ru: "Неоморфизм", en: "Soft UI", fr: "Néomorphisme", sw: "linear-gradient(135deg, #ffffff, #e4e8ee 50%, #b8bec7)" },
+  { id: "minimal", ru: "Минимализм", en: "Minimal", fr: "Minimalisme", sw: "radial-gradient(circle at 65% 40%, #e5484d 0 3px, transparent 4px), repeating-radial-gradient(circle at 65% 40%, transparent 0 7px, rgba(0,0,0,.2) 7px 8px), #fafaf8" },
+  { id: "glow", ru: "Неон", en: "Neon glow", fr: "Néon", sw: "radial-gradient(circle at 25% 25%, #7c3aed, transparent 60%), radial-gradient(circle at 80% 85%, #39ff88, transparent 55%), #06060b" },
+  { id: "vintage", ru: "Ретро-приёмник", en: "Vintage radio", fr: "Poste vintage", sw: "linear-gradient(transparent 30%, #2a1608 30% 58%, transparent 58%), linear-gradient(90deg, #4a2a16, #73462a 50%, #4a2a16)" },
+  { id: "cyber", ru: "Synthwave", en: "Synthwave", fr: "Synthwave", sw: "radial-gradient(circle at 50% 62%, #ffcf5c 0 7px, #ff2975 8px 9px, transparent 10px), linear-gradient(#1d0636 0 60%, #ff2975 60% 63%, #0a0118 63%)" },
+  { id: "glass", ru: "Стекло", en: "Glass", fr: "Verre", sw: "radial-gradient(circle at 20% 20%, #ff5fbf, transparent 55%), radial-gradient(circle at 85% 40%, #4dd8ff, transparent 50%), radial-gradient(circle at 45% 95%, #ffb057, transparent 55%), #160f33" },
+  { id: "cassette", ru: "Кассета Lo-Fi", en: "Lo-Fi cassette", fr: "Cassette lo-fi", sw: "linear-gradient(#2b1d3a, #a95d6c 60%, #e59a63)" },
+  { id: "pop", ru: "Поп-арт", en: "Pop art", fr: "Pop art", sw: "radial-gradient(circle, #ff3d7f 0 30%, transparent 33%) 0 0 / 7px 7px, #ffd23f" },
+  { id: "studio", ru: "Студия", en: "Studio", fr: "Studio", sw: "repeating-linear-gradient(90deg, transparent 0 4px, #0b0f14 4px 6px), linear-gradient(to top, #3fb950 0 40%, #d29922 40% 60%, #0b0f14 60%)" },
+  { id: "art", ru: "Обложка", en: "Cover art", fr: "Pochette", sw: "conic-gradient(from 40deg, #ff7a59, #7b2ff7, #00b4d8, #ffcf5c, #ff7a59)" }
 ];
 // Полосы эквалайзера и спектра: высота и ритм у каждой свои, чтобы не прыгали строем
 function skBars(n) {
@@ -2018,7 +2054,7 @@ function renderSkinOpts() {
     b.setAttribute("aria-pressed", s.id === cur ? "true" : "false");
     b.innerHTML = '<i></i><span></span>';
     b.firstChild.style.background = s.sw;
-    b.lastChild.textContent = lang === "en" ? s.en : s.ru;
+    b.lastChild.textContent = s[lang] || s.en;
     b.onclick = () => { applySkin(s.id, true); };
     box.appendChild(b);
   });
