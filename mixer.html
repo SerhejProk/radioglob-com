@@ -1,0 +1,1387 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e4e8ee">
+<title>МИКШЕР</title>
+<link rel="icon" type="image/svg+xml" href="mixer-icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="mixer-icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="mixer-icon-180.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="МИКШЕР — РАДИО">
+<meta property="og:description" content="Соберите свой микс: загрузите треки, подрежьте, наложите эффекты и включите.">
+<meta property="og:url" content="https://radioglob.com/mixer.html">
+<meta property="og:image" content="https://radioglob.com/mixer-icon-512.png">
+<script>
+// Микшер работает только как сайт: со страницы-файла уводим на адрес сайта
+(function () {
+  var SITE = "https://radioglob.com/mixer.html";
+  if (!/^https?:$/.test(location.protocol)) location.replace(SITE);
+})();
+// Тема по времени суток, как у радио: с 7:00 до 20:00 светлая. Проверка: ?theme=night
+// Тема оформления — та же, что выбрана в радио (radio.skin); ставим до отрисовки, чтобы не мелькал стандартный вид. Проверка: ?skin=glow
+(function () {
+  var forced = (location.search.match(/theme=(day|night)/) || [])[1];
+  var SKIN_COLOR = { minimal: "#fafaf8", glow: "#06060b", vintage: "#3a2112", cyber: "#0a0118", glass: "#160f33",
+    cassette: "#2b1d3a", pop: "#ffd23f", studio: "#0b0f14", art: "#120d18", aurora: "#05060f", chrome: "#dde2ea" };
+  var skin = (location.search.match(/skin=(\w+)/) || [])[1];
+  if (skin === undefined) { try { skin = JSON.parse(localStorage.getItem("radio.skin")); } catch (e) { skin = ""; } }
+  if (SKIN_COLOR[skin]) document.documentElement.setAttribute("data-skin", skin);
+  function apply() {
+    var h = new Date().getHours();
+    var night = forced ? forced === "night" : (h < 7 || h >= 20);
+    document.documentElement.setAttribute("data-theme", night ? "night" : "day");
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var sk = document.documentElement.getAttribute("data-skin");
+    if (meta) meta.setAttribute("content", SKIN_COLOR[sk] || (night ? "#2a2d34" : "#e4e8ee"));
+    if (window.redrawAll) window.redrawAll();
+  }
+  window.applyDayNight = apply;
+  window.SKIN_COLOR = SKIN_COLOR;
+  apply();
+  setInterval(apply, 60000);
+})();
+</script>
+<style>
+  /* Тот же неоморфизм, что и у радио; темы оформления радио здесь не применяются — только день/ночь */
+  :root {
+    --bg: #e4e8ee; --text: #2d3748; --muted: #718096; --accent: #2b6cb0; --hot: #e53e3e;
+    --light: #ffffff; --dark: #b8bec7; --ring: rgba(43, 108, 176, .13);
+    --page: var(--bg); --edge: transparent; --wave: rgba(43, 108, 176, .55); --cut: rgba(113, 128, 150, .28);
+    --out: 6px 6px 12px var(--dark), -6px -6px 12px var(--light);
+    --out-sm: 3px 3px 6px var(--dark), -3px -3px 6px var(--light);
+    --in: inset 4px 4px 8px var(--dark), inset -4px -4px 8px var(--light);
+    --in-sm: inset 2px 2px 4px var(--dark), inset -2px -2px 4px var(--light);
+  }
+  :root[data-theme="night"] {
+    --page: #1a1c21; --bg: #2f333c; --text: #edf2f7; --muted: #a0aec0; --accent: #63b3ed; --hot: #fc8181;
+    --light: #414753; --dark: #101114; --ring: rgba(99, 179, 237, .12); --edge: rgba(255, 255, 255, .09);
+    --wave: rgba(99, 179, 237, .6); --cut: rgba(0, 0, 0, .35);
+  }
+  @font-face { font-family: "RoadRadio"; src: url("fonts/RoadRadio.woff") format("woff"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "RoadRadio"; src: url("fonts/RoadRadio-Black.woff") format("woff"); font-weight: 900; font-display: swap; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text);
+    font: 15px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; padding-bottom: 130px; }
+  /* Фон: эквалайзерные столбики внизу экрана */
+  .waves { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; pointer-events: none;
+    background: repeating-linear-gradient(90deg, var(--ring) 0 10px, transparent 10px 18px);
+    -webkit-mask-image: linear-gradient(to top, #000 0, transparent 45%); mask-image: linear-gradient(to top, #000 0, transparent 45%); }
+  button, input, select { font: inherit; color: inherit; }
+  button { background: var(--bg); border: 1px solid var(--edge); cursor: pointer; }
+  header, main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 28px; }
+  .top { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  h1 { margin: 0; font: 900 44px/1 "RoadRadio", "Segoe UI", sans-serif; letter-spacing: .08em;
+    text-shadow: 1px 1px 1px var(--light), -1px -1px 1px var(--dark); }
+  .langs { display: flex; gap: 8px; }
+  .lang, .back { padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); box-shadow: var(--out-sm); }
+  .lang.on { box-shadow: var(--in-sm); color: var(--accent); }
+  .back { text-decoration: none; background: var(--bg); border: 1px solid var(--edge); }
+  .back:hover { color: var(--accent); }
+  .back[hidden] { display: none; }
+  h1.home { cursor: pointer; }
+  .sub { color: var(--muted); margin: 6px 0 18px; }
+  .btn { padding: 11px 18px; border-radius: 14px; font-weight: 600; color: var(--accent); box-shadow: var(--out); transition: box-shadow .15s; }
+  .btn:active { box-shadow: var(--in); }
+  .btn:disabled { color: var(--muted); cursor: default; box-shadow: var(--out-sm); }
+  .tools { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .chainbox { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+  .num { width: 70px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--edge); background: var(--bg); box-shadow: var(--in-sm); }
+  .status { min-height: 22px; margin: 14px 0 6px; color: var(--muted); }
+  .status.err { color: var(--hot); }
+  .drop { margin: 10px 0; padding: 38px 20px; text-align: center; border-radius: 18px; color: var(--muted);
+    box-shadow: var(--in); border: 2px dashed transparent; cursor: pointer; }
+  .drop.over { border-color: var(--accent); color: var(--accent); }
+  .drop b { display: block; font-size: 40px; line-height: 1; margin-bottom: 8px; color: var(--accent); }
+  .panel { background: var(--bg); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--out); padding: 14px; margin: 16px 0; }
+  #intro .tr-head { flex-wrap: wrap; }
+  #intro h2 { margin: 0; font-size: 18px; }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .tool { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; box-shadow: var(--in-sm); }
+  .tool i { font-style: normal; font-size: 20px; line-height: 1.2; width: 26px; text-align: center; flex: none; }
+  .tool b { display: block; font-size: 14px; }
+  .tool span { display: block; font-size: 12px; color: var(--muted); }
+  .hint { font-size: 12px; color: var(--muted); margin: 6px 2px 0; }
+  canvas { display: block; width: 100%; touch-action: pan-y; }
+  .ov { border-radius: 12px; box-shadow: var(--in-sm); cursor: pointer; }
+  .tr-head { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .tr-name { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-name small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .ib { min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); box-shadow: var(--out-sm); }
+  .ib.on { box-shadow: var(--in-sm); color: var(--accent); }
+  .ib.del:hover { color: var(--hot); }
+  .wf { height: 90px; border-radius: 12px; box-shadow: var(--in-sm); cursor: ew-resize; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 18px; margin-top: 12px; }
+  .ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; color: var(--muted); }
+  .ctl .lbl { display: flex; justify-content: space-between; gap: 6px; }
+  .ctl .lbl output { color: var(--text); font-variant-numeric: tabular-nums; }
+  .ctl .pair { display: flex; gap: 6px; align-items: center; }
+  .ctl .pair .num { flex: 1; width: auto; min-width: 0; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; padding: 4px 0; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 4px 0; }
+  .player { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--edge);
+    box-shadow: 0 -6px 14px var(--dark); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 5; }
+  .player-in { max-width: 1100px; margin: 0 auto; display: flex; gap: 14px; align-items: center; }
+  .play { width: 56px; height: 56px; border-radius: 50%; font-size: 19px; flex: none; color: var(--accent); box-shadow: var(--out); }
+  .play.on { box-shadow: var(--in); }
+  .play:disabled { color: var(--muted); cursor: default; }
+  .rew { width: 40px; height: 40px; border-radius: 50%; flex: none; color: var(--muted); box-shadow: var(--out-sm); }
+  .pos { flex: 1; min-width: 0; }
+  .time { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; }
+  .mvol { width: 170px; flex: none; font-size: 12px; color: var(--muted); }
+  .mvol label { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+  .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 10; display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; }
+  .modal[hidden] { display: none; }
+  .modal .panel { width: 100%; max-width: 520px; max-height: calc(100vh - 120px); overflow: auto; margin: 0; }
+  .modal h2 { margin: 0 0 12px; font-size: 20px; }
+  .saverow { display: flex; gap: 8px; margin-bottom: 14px; }
+  .saverow .num { flex: 1; width: auto; }
+  .mix { display: flex; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--ring); }
+  .mix .tr-name small { display: block; margin: 0; }
+  footer { max-width: 1100px; margin: 24px auto 0; padding: 0 16px; font-size: 12px; color: var(--muted); }
+  @media (max-width: 640px) {
+    h1 { font-size: 34px; }
+    .top { gap: 12px; }
+    .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; }
+    .mvol { display: none; }  /* на телефоне громкость — кнопками телефона, как у радио */
+    .play { width: 50px; height: 50px; }
+  }
+  /* ===== Темы оформления =====
+     Без data-skin — стандартный неоморфизм (день/ночь по часам, фоны под жанры).
+     С data-skin фон рисует слой .skin-bg (узоры заполняет скрипт), фон жанров и антенна скрыты.
+     Переменные: --page фон страницы, --bg карточки и кнопки, --field поля ввода,
+     --on-page / --on-page-muted текст прямо на фоне, --text / --muted текст на карточках,
+     --out тень приподнятых элементов, --in «нажатое» или выбранное состояние */
+  .skin-bg { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .skin-bg > * { position: absolute; }
+  :root[data-skin] .skin-bg { display: block; }
+  :root[data-skin] .waves, :root[data-skin] .antenna { display: none; }
+  :root[data-skin] .card, :root[data-skin] .player, :root[data-skin] .openweb { color: var(--text); }
+  :root[data-skin] .card, :root[data-skin] .player, :root[data-skin] .chip, :root[data-skin] .btn, :root[data-skin] .skins,
+  :root[data-skin] .search input, :root[data-skin] .search select { -webkit-backdrop-filter: var(--blur, none); backdrop-filter: var(--blur, none); }
+  :root[data-skin] .search input, :root[data-skin] .search select { box-shadow: none; border: 1px solid var(--edge); }
+  :root[data-skin] .cbtn { box-shadow: none; border: 1px solid var(--edge); background: var(--field, var(--page)); }
+  :root[data-skin] .search select option { background: var(--page); color: var(--on-page); }
+  :root[data-skin] .logo { box-shadow: none; background: var(--logo-bg, var(--field, var(--bg))); }
+  :root[data-skin] .vol { box-shadow: none; }
+  :root[data-skin] .status a { color: inherit; }
+  :root[data-skin] h1 { text-shadow: none; }
+  :root[data-skin] .player { box-shadow: 0 -6px 18px var(--dark); }
+  @keyframes skPing { from { transform: scale(1); opacity: .7; } to { transform: scale(7); opacity: 0; } }
+  @keyframes skBounce { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+  @keyframes skSpin { to { transform: rotate(360deg); } }
+  @keyframes skRun { to { background-position: 0 60px, 0 60px; } }
+  @keyframes skFloat { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(6%, 8%) scale(1.08); } 100% { transform: translate(-6%, 3%) scale(.95); } }
+  @keyframes skTune { 0% { left: 62%; } 40% { left: 64%; } 60% { left: 30%; } 100% { left: 33%; } }
+  @keyframes skDash { to { stroke-dashoffset: -44; } }
+  @keyframes skWob { from { transform: rotate(-8deg); } to { transform: rotate(8deg) scale(1.08); } }
+  .skin-bg .eq, .skin-bg .spec { display: flex; align-items: flex-end; left: 0; right: 0; bottom: 0; }
+  .skin-bg .eq i, .skin-bg .spec i { flex: 1; height: var(--h); transform-origin: bottom; }
+  .on-air .skin-bg .eq i, .on-air .skin-bg .spec i { animation: skBounce var(--t) ease-in-out infinite alternate; animation-delay: var(--d); }
+
+  /* 1. Минимализм — контурный глобус, точка станции пульсирует в эфире */
+  :root[data-skin="minimal"] { --page: #fafaf8; --bg: #ffffff; --field: #ffffff; --text: #111111; --muted: #5f5f5f; --on-page: #111111; --on-page-muted: #5f5f5f;
+    --accent: #111111; --on-accent: #ffffff; --light: #ffffff; --dark: rgba(0, 0, 0, .06); --edge: #e4e4e0; --logo-bg: #f1f1ee;
+    --out: 0 1px 2px rgba(0, 0, 0, .04); --out-sm: 0 1px 2px rgba(0, 0, 0, .04); --in: inset 0 0 0 2px #111111; --in-sm: inset 0 0 0 1.5px #111111; }
+  :root[data-skin="minimal"] .chip.on { background: #111111; color: #ffffff; box-shadow: none; }
+  :root[data-skin="minimal"] .card.playing { box-shadow: inset 3px 0 0 #e5484d, var(--out); }
+  :root[data-skin="minimal"] .card.playing .name { color: #111111; }
+  :root[data-skin="minimal"] #nowMeta .song { color: #c62f35; }
+  .skin-bg .globe { width: 820px; height: 820px; right: -260px; top: -40px; color: #111111; }
+  .skin-bg .globe .dot { fill: #e5484d; }
+  .skin-bg .globe .pulse { fill: none; stroke: #e5484d; stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .on-air .skin-bg .globe .pulse { animation: skPing 3s ease-out infinite; }
+
+  /* 2. Тёмная эстетика — неоновые пятна, светящийся эквалайзер, сканлайны */
+  :root[data-skin="glow"] { --page: #06060b; --bg: rgba(18, 18, 30, .8); --field: rgba(255, 255, 255, .06); --text: #eeeef6; --muted: #a7a7bb;
+    --on-page: #f3f3f8; --on-page-muted: #a7a7bb; --accent: #39ff88; --on-accent: #03140a; --light: transparent; --dark: rgba(0, 0, 0, .6);
+    --edge: rgba(255, 255, 255, .10); --logo-bg: rgba(139, 92, 246, .18); --blur: blur(10px);
+    --out: 0 0 0 transparent; --out-sm: 0 0 0 transparent;
+    --in: inset 0 0 0 1px #39ff88, 0 0 22px rgba(57, 255, 136, .3); --in-sm: inset 0 0 0 1px #39ff88, 0 0 12px rgba(57, 255, 136, .35); }
+  :root[data-skin="glow"] h1 { color: #eafff2; text-shadow: 0 0 8px rgba(57, 255, 136, .65), 0 0 28px rgba(57, 255, 136, .35); }
+  :root[data-skin="glow"] .chip.on { background: #39ff88; color: #03140a; box-shadow: 0 0 18px rgba(57, 255, 136, .55); }
+  :root[data-skin="glow"] .play { box-shadow: 0 0 18px rgba(57, 255, 136, .45); }
+  .skin-bg .neon { top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 12% 8%, rgba(124, 58, 237, .55), transparent 42%), radial-gradient(circle at 92% 28%, rgba(37, 99, 235, .45), transparent 40%),
+      radial-gradient(ellipse at 50% 115%, rgba(57, 255, 136, .30), transparent 55%); }
+  .skin-bg .scan { top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, .025) 0 1px, transparent 1px 4px); }
+  .skin-bg .eq { height: 42%; gap: 6px; padding: 0 6px; opacity: .45;
+    -webkit-mask-image: linear-gradient(to top, #000 30%, transparent); mask-image: linear-gradient(to top, #000 30%, transparent); }
+  .skin-bg .eq i { border-radius: 6px 6px 0 0; background: linear-gradient(to top, #39ff88, #22d3ee 55%, #8b5cf6); box-shadow: 0 0 14px rgba(57, 255, 136, .6); }
+
+  /* 3. Ретро-приёмник — ореховое дерево, шкала FM со стрелкой, ткань динамика, латунная ручка */
+  :root[data-skin="vintage"] { --page: #3a2112; --bg: #f4e8cd; --field: #f4e8cd; --text: #3b2414; --muted: #6b4e33; --on-page: #ffd98a; --on-page-muted: #e6c99a;
+    --accent: #b4441e; --on-accent: #fff6e0; --light: transparent; --dark: rgba(0, 0, 0, .45); --edge: #c9a874; --logo-bg: #3b2414;
+    --out: 0 2px 0 #c9a874, 0 8px 18px rgba(0, 0, 0, .4); --out-sm: 0 2px 0 #c9a874, 0 4px 10px rgba(0, 0, 0, .35);
+    --in: inset 0 0 0 2px #b4441e; --in-sm: inset 0 0 0 2px #b4441e; }
+  :root[data-skin="vintage"] h1 { color: #ffcf6b; text-shadow: 0 0 18px rgba(255, 170, 50, .55), 0 2px 0 #1e0f06; }
+  :root[data-skin="vintage"] .name { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: 0; }
+  :root[data-skin="vintage"] .chip.on { background: #b4441e; color: #fff6e0; }
+  :root[data-skin="vintage"] .player { background: #ead9b2; border-top: 3px solid #b8955a; }
+  :root[data-skin="vintage"] .logo { color: #ffd98a; }
+  .skin-bg .wood { top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(10, 4, 0, .55) 100%),
+      repeating-linear-gradient(91deg, transparent 0 6px, rgba(0, 0, 0, .14) 6px 8px, transparent 8px 21px, rgba(255, 214, 160, .06) 21px 22px, transparent 22px 37px),
+      repeating-linear-gradient(89deg, rgba(0, 0, 0, .10) 0 2px, transparent 2px 53px),
+      linear-gradient(90deg, #4a2a16, #6b3f22 30%, #573219 55%, #73462a 80%, #4a2a16); }
+  .skin-bg .dial { top: 22px; right: max(24px, calc(50% - 550px)); width: 440px; height: 88px; border-radius: 12px;
+    background: linear-gradient(#2a1608, #170b03); border: 3px solid #c9a24f; box-shadow: inset 0 0 30px rgba(255, 170, 50, .35), 0 6px 16px rgba(0, 0, 0, .5); }
+  .skin-bg .dial svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .skin-bg .needle { position: absolute; top: 10px; bottom: 10px; left: 62%; width: 3px; background: #ff4b2b; box-shadow: 0 0 8px #ff4b2b; border-radius: 2px; }
+  .on-air .skin-bg .needle { animation: skTune 9s ease-in-out infinite alternate; }
+  .skin-bg .grille { right: -50px; bottom: -40px; width: 470px; height: 400px; border-radius: 22px; border: 6px solid #c9a24f;
+    background: repeating-linear-gradient(45deg, rgba(0, 0, 0, .28) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(255, 230, 190, .10) 0 2px, transparent 2px 5px), #7b5a36;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, .55), 0 10px 30px rgba(0, 0, 0, .5); }
+  .skin-bg .brass { left: -40px; bottom: 120px; width: 190px; height: 190px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff1c2, #d6a945 35%, #8a6420 75%); box-shadow: 0 10px 24px rgba(0, 0, 0, .55); }
+
+  /* 4. Киберпанк / Synthwave — полосатое солнце, бегущая неоновая сетка, рамки бортового компьютера */
+  :root[data-skin="cyber"] { --page: #0a0118; --bg: rgba(10, 3, 28, .86); --field: rgba(10, 3, 28, .86); --text: #e8fbff; --muted: #95c8d8;
+    --on-page: #e8fbff; --on-page-muted: #9fd3e3; --accent: #00f0ff; --on-accent: #00141a; --light: transparent; --dark: rgba(255, 41, 117, .3);
+    --edge: rgba(0, 240, 255, .4); --logo-bg: rgba(255, 41, 117, .16);
+    --out: 0 0 0 transparent; --out-sm: 0 0 0 transparent; --in: inset 0 0 0 2px #00f0ff, inset 0 0 22px rgba(0, 240, 255, .25); --in-sm: inset 0 0 0 1px #00f0ff; }
+  :root[data-skin="cyber"] h1 { color: #ffffff; text-shadow: 3px 0 #ff2975, -3px 0 #00f0ff; }
+  :root[data-skin="cyber"] .chip, :root[data-skin="cyber"] .btn, :root[data-skin="cyber"] .lang, :root[data-skin="cyber"] .skin-btn,
+  :root[data-skin="cyber"] .install, :root[data-skin="cyber"] .skins, :root[data-skin="cyber"] .skin-opt, :root[data-skin="cyber"] .search select { border-radius: 0; }
+  :root[data-skin="cyber"] .card, :root[data-skin="cyber"] .search input { border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); }
+  :root[data-skin="cyber"] .chip.on { background: #ff2975; color: #ffffff; border-color: #ff2975; box-shadow: none; }
+  :root[data-skin="cyber"] .meta { font-family: Consolas, "Courier New", ui-monospace, monospace; letter-spacing: 0; }
+  :root[data-skin="cyber"] .player { border-top: 1px solid #ff2975; }
+  :root[data-skin="cyber"] .logo { color: #ff7aa8; }
+  .skin-bg .sky { top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(#0a0118 0%, #1d0636 45%, #4a0b55 72%, #0a0118 72.4%); }
+  .skin-bg .sun { left: 50%; top: 72%; width: 320px; height: 320px; margin: -300px 0 0 -160px; border-radius: 50%; opacity: .9;
+    background: linear-gradient(#ffe66d 10%, #ff8c42 40%, #ff2975 70%, #a020f0); box-shadow: 0 0 80px rgba(255, 41, 117, .55);
+    -webkit-mask-image: linear-gradient(#000 0 50%, transparent 50%), repeating-linear-gradient(#000 0 13px, transparent 13px 20px);
+    mask-image: linear-gradient(#000 0 50%, transparent 50%), repeating-linear-gradient(#000 0 13px, transparent 13px 20px); }
+  .skin-bg .floor { left: 0; right: 0; top: 72%; bottom: 0; overflow: hidden; -webkit-perspective: 220px; perspective: 220px;
+    -webkit-perspective-origin: 50% 0; perspective-origin: 50% 0; background: linear-gradient(rgba(255, 41, 117, .25), rgba(10, 1, 24, 0) 60%); }
+  .skin-bg .floor::before { content: ""; position: absolute; left: -150%; right: -150%; top: 0; height: 400%; transform-origin: 50% 0; transform: rotateX(62deg);
+    background: linear-gradient(90deg, rgba(255, 41, 117, .75) 2px, transparent 2px) 0 0 / 60px 60px, linear-gradient(rgba(0, 240, 255, .6) 2px, transparent 2px) 0 0 / 60px 60px; }
+  .on-air .skin-bg .floor::before { animation: skRun 1.4s linear infinite; }
+  .skin-bg .floor::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: #ff2975; box-shadow: 0 0 20px 4px rgba(255, 41, 117, .7); }
+  .skin-bg .hud { top: 14px; left: 14px; right: 14px; bottom: 14px; font: 600 11px/1.6 Consolas, "Courier New", monospace; color: rgba(0, 240, 255, .75); letter-spacing: .08em; }
+  .skin-bg .hud i { position: absolute; width: 34px; height: 34px; border: 2px solid rgba(0, 240, 255, .7); }
+  .skin-bg .hud i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; }
+  .skin-bg .hud i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; }
+  .skin-bg .hud i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; }
+  .skin-bg .hud i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+  .skin-bg .hud span { position: absolute; right: 46px; top: 4px; text-align: right; }
+  .skin-bg .hud span + span { right: auto; top: auto; left: 46px; bottom: 110px; text-align: left; color: rgba(255, 41, 117, .85); }
+
+  /* 5. Глассморфизм — плывущие цветные пятна под матовым стеклом */
+  :root[data-skin="glass"] { --page: #160f33; --bg: rgba(255, 255, 255, .13); --field: rgba(255, 255, 255, .12); --text: #ffffff; --muted: rgba(255, 255, 255, .82);
+    --on-page: #ffffff; --on-page-muted: rgba(255, 255, 255, .85); --accent: #ffffff; --on-accent: #2a1f5c; --light: transparent; --dark: rgba(10, 5, 40, .3);
+    --edge: rgba(255, 255, 255, .38); --logo-bg: rgba(255, 255, 255, .22); --blur: blur(20px) saturate(150%);
+    --out: 0 8px 32px rgba(10, 5, 40, .25); --out-sm: 0 4px 14px rgba(10, 5, 40, .2); --in: inset 0 0 0 2px rgba(255, 255, 255, .9); --in-sm: inset 0 0 0 1.5px rgba(255, 255, 255, .9); }
+  :root[data-skin="glass"] body { text-shadow: 0 1px 2px rgba(20, 10, 60, .35); }
+  :root[data-skin="glass"] .chip.on { background: rgba(255, 255, 255, .92); color: #2a1f5c; text-shadow: none; }
+  .skin-bg .blob { border-radius: 50%; -webkit-filter: blur(70px); filter: blur(70px); opacity: .85; animation: skFloat 22s ease-in-out infinite alternate; }
+  .skin-bg .b1 { width: 46vw; height: 46vw; max-width: 640px; max-height: 640px; left: -8%; top: -12%; background: #ff5fbf; }
+  .skin-bg .b2 { width: 40vw; height: 40vw; max-width: 560px; max-height: 560px; right: -6%; top: 10%; background: #4dd8ff; animation-delay: -6s; }
+  .skin-bg .b3 { width: 38vw; height: 38vw; max-width: 520px; max-height: 520px; left: 30%; bottom: -18%; background: #ffb057; animation-delay: -12s; }
+  .skin-bg .b4 { width: 30vw; height: 30vw; max-width: 420px; max-height: 420px; left: 8%; bottom: 10%; background: #8f7bff; animation-delay: -3s; }
+  .skin-bg .veil { top: 0; left: 0; right: 0; bottom: 0; background: rgba(22, 15, 51, .22); }
+
+  /* 6. Кассетный Lo-Fi — закатное небо, звёзды, зерно плёнки, кассета с крутящимися бобинами */
+  :root[data-skin="cassette"] { --page: #2b1d3a; --bg: #fbf3e7; --field: #fbf3e7; --text: #3a2622; --muted: #6d5247; --on-page: #fff4e8; --on-page-muted: #f6dccb;
+    --accent: #c9542c; --on-accent: #ffffff; --light: transparent; --dark: rgba(30, 10, 20, .35); --edge: #ead8c2; --logo-bg: #f2c46d;
+    --out: 0 5px 0 rgba(58, 38, 34, .12), 0 12px 26px rgba(30, 10, 20, .28); --out-sm: 0 3px 0 rgba(58, 38, 34, .12), 0 6px 14px rgba(30, 10, 20, .22);
+    --in: inset 0 0 0 2px #c9542c; --in-sm: inset 0 0 0 2px #c9542c; }
+  :root[data-skin="cassette"] .chip.on { background: #3a2622; color: #fbf3e7; }
+  :root[data-skin="cassette"] .player { background: #fbf3e7 linear-gradient(90deg, #c9542c 0 33%, #f2c46d 33% 66%, #e58fa0 66%) top / 100% 6px no-repeat; }
+  .skin-bg .dusk { top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, #2b1d3a 0%, #573763 32%, #a95d6c 64%, #e59a63 100%); }
+  .skin-bg .stars { top: 0; left: 0; right: 0; height: 50%;
+    background: radial-gradient(circle, rgba(255, 244, 232, .8) 0 1px, transparent 1.6px) 0 0 / 97px 83px, radial-gradient(circle, rgba(255, 244, 232, .5) 0 1px, transparent 1.6px) 40px 30px / 151px 127px; }
+  .skin-bg .cassette { right: max(-60px, calc(50% - 640px)); bottom: 110px; width: 500px; transform: rotate(-9deg); -webkit-filter: drop-shadow(0 24px 30px rgba(20, 5, 20, .45)); filter: drop-shadow(0 24px 30px rgba(20, 5, 20, .45)); }
+  .skin-bg .cassette svg { display: block; width: 100%; height: auto; }
+  .skin-bg .reel { transform-box: fill-box; transform-origin: center; }
+  .on-air .skin-bg .reel { animation: skSpin 2.6s linear infinite; }
+  .skin-bg .grain { top: 0; left: 0; width: 100%; height: 100%; opacity: .22; mix-blend-mode: overlay; }
+
+  /* 7. Поп-арт / Мемфис — жёлтый фон, растровые точки, геометрия, толстые контуры и жёсткие тени */
+  :root[data-skin="pop"] { --page: #ffd23f; --bg: #ffffff; --field: #ffffff; --text: #111111; --muted: #474747; --on-page: #111111; --on-page-muted: #3a3000;
+    --accent: #ff3d7f; --on-accent: #111111; --light: transparent; --dark: transparent; --edge: #111111; --logo-bg: #ff3d7f;
+    --out: 4px 4px 0 #111111; --out-sm: 3px 3px 0 #111111; --in: 1px 1px 0 #111111; --in-sm: 1px 1px 0 #111111; }
+  :root[data-skin="pop"] .btn, :root[data-skin="pop"] .chip, :root[data-skin="pop"] .fav, :root[data-skin="pop"] .play, :root[data-skin="pop"] .card,
+  :root[data-skin="pop"] .lang, :root[data-skin="pop"] .skin-btn, :root[data-skin="pop"] .install, :root[data-skin="pop"] .vbtn, :root[data-skin="pop"] .save,
+  :root[data-skin="pop"] .search input, :root[data-skin="pop"] .search select, :root[data-skin="pop"] .skins, :root[data-skin="pop"] .skin-opt,
+  :root[data-skin="pop"] .openweb, :root[data-skin="pop"] .note .acts a, :root[data-skin="pop"] .note .acts button { border: 3px solid #111111; }
+  :root[data-skin="pop"] .search input, :root[data-skin="pop"] .search select { box-shadow: 3px 3px 0 #111111; }
+  :root[data-skin="pop"] h1 { color: #111111; text-shadow: 4px 4px 0 #ff3d7f; }
+  :root[data-skin="pop"] .chip.on, :root[data-skin="pop"] .skin-opt.on { background: #00c2c7; color: #111111; }
+  :root[data-skin="pop"] .lang.on { background: #111111; color: #ffd23f; }
+  :root[data-skin="pop"] .btn, :root[data-skin="pop"] .play { background: #ff3d7f; color: #111111; }
+  :root[data-skin="pop"] .install, :root[data-skin="pop"] .card.playing .name { color: #c2185b; }
+  :root[data-skin="pop"] .card.playing { background: #e9fdfd; box-shadow: 6px 6px 0 #ff3d7f; }
+  :root[data-skin="pop"] .player { border-top: 3px solid #111111; box-shadow: none; }
+  :root[data-skin="pop"] #nowMeta .song { color: #c2185b; }
+  .skin-bg .dots { top: 0; left: 0; right: 0; bottom: 0; opacity: .6; background: radial-gradient(circle, #ff3d7f 0 34%, transparent 36%) 0 0 / 18px 18px;
+    -webkit-mask-image: radial-gradient(circle 520px at 100% 0%, #000 0, transparent 100%), radial-gradient(circle 420px at 0% 100%, #000 0, transparent 100%);
+    mask-image: radial-gradient(circle 520px at 100% 0%, #000 0, transparent 100%), radial-gradient(circle 420px at 0% 100%, #000 0, transparent 100%); }
+  .skin-bg .memphis { top: 0; left: 0; width: 100%; height: 100%; }
+  .on-air .skin-bg .wob { animation: skWob 3s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+
+  /* 8. Студийный дашборд — сетка пульта, спектр, осциллограф, табло с данными станции */
+  :root[data-skin="studio"] { --page: #0b0f14; --bg: #121821; --field: #0f141b; --text: #e6edf3; --muted: #8d9aa7; --on-page: #e6edf3; --on-page-muted: #8d9aa7;
+    --accent: #3fb950; --on-accent: #04160a; --light: transparent; --dark: rgba(0, 0, 0, .5); --edge: #263241; --logo-bg: #1c2633;
+    --out: 0 0 0 transparent; --out-sm: 0 0 0 transparent; --in: inset 3px 0 0 #3fb950, inset 0 0 0 1px #2f6b3a; --in-sm: inset 0 0 0 1px #3fb950; }
+  :root[data-skin="studio"] .card, :root[data-skin="studio"] .chip, :root[data-skin="studio"] .btn, :root[data-skin="studio"] .lang,
+  :root[data-skin="studio"] .skin-btn, :root[data-skin="studio"] .install, :root[data-skin="studio"] .skins, :root[data-skin="studio"] .skin-opt,
+  :root[data-skin="studio"] .search input, :root[data-skin="studio"] .search select { border-radius: 6px; }
+  :root[data-skin="studio"] .play { border-radius: 10px; }
+  :root[data-skin="studio"] .chip.on { background: #3fb950; color: #04160a; }
+  :root[data-skin="studio"] .meta, :root[data-skin="studio"] .status { font-family: Consolas, "Courier New", ui-monospace, monospace; letter-spacing: 0; }
+  .skin-bg .sgrid { top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(rgba(63, 185, 80, .10) 1px, transparent 1px) 0 0 / 120px 120px, linear-gradient(90deg, rgba(63, 185, 80, .10) 1px, transparent 1px) 0 0 / 120px 120px,
+      linear-gradient(rgba(139, 148, 158, .05) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(139, 148, 158, .05) 1px, transparent 1px) 0 0 / 24px 24px; }
+  .skin-bg .ruler { left: 0; top: 0; bottom: 0; width: 28px; border-right: 1px solid #263241;
+    background: repeating-linear-gradient(to bottom, rgba(139, 148, 158, .45) 0 1px, transparent 1px 12px) right top / 10px 100% repeat-y,
+      repeating-linear-gradient(to bottom, rgba(139, 148, 158, .7) 0 1px, transparent 1px 60px) right top / 20px 100% repeat-y; }
+  .skin-bg .wave { left: 0; right: 0; top: 40%; height: 160px; }
+  .skin-bg .wave svg { width: 100%; height: 100%; }
+  .skin-bg .wave path { stroke-dasharray: 14 8; }
+  .on-air .skin-bg .wave path { animation: skDash 2s linear infinite; }
+  .skin-bg .spec { left: 28px; height: 36%; gap: 3px; padding: 0 4px; opacity: .55;
+    -webkit-mask-image: linear-gradient(to top, #000 35%, transparent); mask-image: linear-gradient(to top, #000 35%, transparent); }
+  .skin-bg .spec i { background: linear-gradient(to top, #3fb950 0 55%, #d29922 55% 80%, #f85149 80%) bottom / 100% 340px; }
+  .skin-bg .readout { display: grid; grid-template-columns: auto auto; gap: 0 18px; top: 14px; right: max(20px, calc(50% - 550px)); padding: 8px 14px;
+    font: 500 12px/1.4 Consolas, "Courier New", monospace; color: #8d9aa7; border: 1px solid #263241; border-radius: 6px; background: rgba(11, 15, 20, .85); }
+  .skin-bg .readout b { color: #7ee787; font-weight: 600; }
+  .skin-bg .readout .rec { color: #8d9aa7; }
+  .on-air .skin-bg .readout .rec { color: #ff5c5c; }
+
+  /* 9. Обложка во весь экран — фон перетекает в цвета текущей станции и песни */
+  :root[data-skin="art"] { --page: #120d18; --bg: rgba(0, 0, 0, .30); --field: rgba(0, 0, 0, .25); --text: #ffffff; --muted: rgba(255, 255, 255, .8);
+    --on-page: #ffffff; --on-page-muted: rgba(255, 255, 255, .85); --accent: #ffffff; --on-accent: #111111; --light: transparent; --dark: rgba(0, 0, 0, .35);
+    --edge: rgba(255, 255, 255, .18); --logo-bg: rgba(255, 255, 255, .16); --blur: blur(22px) saturate(140%);
+    --out: 0 10px 30px rgba(0, 0, 0, .18); --out-sm: 0 4px 12px rgba(0, 0, 0, .15); --in: inset 0 0 0 2px #ffffff; --in-sm: inset 0 0 0 1.5px #ffffff; }
+  :root[data-skin="art"] .chip.on { background: #ffffff; color: #111111; }
+  .skin-bg .art { top: -12%; left: -12%; right: -12%; bottom: -12%; -webkit-filter: blur(60px) saturate(1.35); filter: blur(60px) saturate(1.35);
+    opacity: 0; transition: opacity 2.2s ease; }
+  .skin-bg .art.show { opacity: 1; }
+  :root[data-skin="art"] .skin-bg .veil { background: linear-gradient(rgba(0, 0, 0, .28), rgba(0, 0, 0, .42)); }
+
+  /* 11. Аврора — северное сияние над чёрным небом, в эфире пульсирует светящаяся сфера */
+  :root[data-skin="aurora"] { --page: #05060f; --bg: rgba(13, 15, 30, .62); --field: rgba(255, 255, 255, .05); --text: #eef1ff; --muted: #9ba4c9;
+    --on-page: #eef1ff; --on-page-muted: #a3acd0; --accent: #7cf7d4; --on-accent: #04140f; --light: transparent; --dark: rgba(0, 0, 0, .55);
+    --edge: rgba(150, 170, 255, .16); --logo-bg: rgba(255, 255, 255, .06); --blur: blur(18px) saturate(140%);
+    --out: 0 10px 40px rgba(0, 0, 0, .45); --out-sm: 0 4px 16px rgba(0, 0, 0, .35); --in: inset 0 0 0 1px rgba(124, 247, 212, .55); --in-sm: inset 0 0 0 1px rgba(124, 247, 212, .7); }
+  :root[data-skin="aurora"] h1 { background: linear-gradient(90deg, #7cf7d4, #8b7bff 55%, #ff7ad9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  :root[data-skin="aurora"] .chip.on { background: linear-gradient(90deg, #7cf7d4, #8b7bff); color: #050611; border-color: transparent; box-shadow: 0 0 22px rgba(124, 247, 212, .35); }
+  :root[data-skin="aurora"] .card.playing { box-shadow: 0 0 0 1px #7cf7d4, 0 0 34px rgba(124, 247, 212, .22); }
+  :root[data-skin="aurora"] .play { background: linear-gradient(135deg, #7cf7d4, #8b7bff); color: #050611; border-color: transparent; }
+  .skin-bg .sky2 { top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 120%, #10183a 0, #05060f 60%); }
+  .skin-bg .stars2 { top: 0; left: 0; right: 0; bottom: 0; opacity: .55;
+    background: radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 68% 12%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 84% 34%, #cfe, transparent), radial-gradient(1px 1px at 32% 42%, #fff, transparent),
+      radial-gradient(1px 1px at 52% 8%, #fff, transparent), radial-gradient(1.5px 1.5px at 92% 70%, #fff, transparent),
+      radial-gradient(1px 1px at 6% 76%, #fff, transparent), radial-gradient(1px 1px at 44% 88%, #dfe, transparent); }
+  .skin-bg .rib { left: -20%; width: 140%; height: 34vh; border-radius: 50%; -webkit-filter: blur(48px); filter: blur(48px); opacity: .55; mix-blend-mode: screen;
+    animation: skAur 18s ease-in-out infinite alternate; }
+  .skin-bg .r1 { top: 4%; background: linear-gradient(90deg, transparent, #22e3a6 30%, #7cf7d4 50%, #3fb7ff 70%, transparent); transform: rotate(-8deg); }
+  .skin-bg .r2 { top: 20%; background: linear-gradient(90deg, transparent, #8b7bff 25%, #c86bff 50%, #ff7ad9 75%, transparent); animation-duration: 24s; animation-delay: -8s; opacity: .42; }
+  .skin-bg .r3 { top: 36%; height: 22vh; background: linear-gradient(90deg, transparent, #3fb7ff 35%, #22e3a6 60%, transparent); animation-duration: 30s; animation-delay: -15s; opacity: .3; }
+  @keyframes skAur { 0% { transform: translateX(-6%) rotate(-8deg) scaleY(1); } 50% { transform: translateX(4%) rotate(-3deg) scaleY(1.3); } 100% { transform: translateX(8%) rotate(-10deg) scaleY(.85); } }
+  .skin-bg .orb { right: 6%; bottom: 150px; width: 220px; height: 220px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff 0, #b8fff0 8%, #7cf7d4 22%, #8b7bff 55%, rgba(255, 122, 217, .0) 72%);
+    -webkit-filter: blur(2px) drop-shadow(0 0 40px rgba(124, 247, 212, .45)); filter: blur(2px) drop-shadow(0 0 40px rgba(124, 247, 212, .45)); opacity: .55; transition: opacity 1s; }
+  .on-air .skin-bg .orb { opacity: .9; animation: skOrb 2.4s ease-in-out infinite alternate; }
+  @keyframes skOrb { from { transform: scale(.92); } to { transform: scale(1.06); } }
+
+  /* 12. Жидкий хром — голографический металл (Y2K), матовые стеклянные карточки */
+  :root[data-skin="chrome"] { --page: #dde2ea; --bg: rgba(255, 255, 255, .5); --field: rgba(255, 255, 255, .55); --text: #0d0f14; --muted: #4b5263;
+    --on-page: #0d0f14; --on-page-muted: #3f4656; --accent: #5b3cff; --on-accent: #ffffff; --light: transparent; --dark: rgba(40, 50, 80, .18);
+    --edge: rgba(255, 255, 255, .95); --logo-bg: rgba(255, 255, 255, .7); --blur: blur(22px) saturate(160%);
+    --out: 0 10px 30px rgba(40, 50, 80, .16), inset 0 1px 0 #fff; --out-sm: 0 4px 12px rgba(40, 50, 80, .14), inset 0 1px 0 #fff;
+    --in: inset 0 0 0 1.5px #5b3cff; --in-sm: inset 0 0 0 1.5px #5b3cff; }
+  :root[data-skin="chrome"] h1 { background: linear-gradient(180deg, #ffffff 0%, #a9b1c2 44%, #2a2f3b 52%, #8d96aa 70%, #e9edf3 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-filter: drop-shadow(0 2px 1px rgba(0, 0, 0, .25)); filter: drop-shadow(0 2px 1px rgba(0, 0, 0, .25)); }
+  :root[data-skin="chrome"] .chip.on { background: linear-gradient(120deg, #c7f9ff, #e6c8ff 35%, #ffd6e8 65%, #d9ffe0); color: #111111; box-shadow: 0 0 0 1px #ffffff, 0 6px 18px rgba(91, 60, 255, .22); }
+  :root[data-skin="chrome"] .card.playing { box-shadow: 0 0 0 2px #ffffff, 0 0 0 3.5px #b9a8ff, 0 12px 30px rgba(91, 60, 255, .2); }
+  :root[data-skin="chrome"] .play { background: linear-gradient(160deg, #ffffff, #b8c0cf 48%, #6b7486 52%, #dfe4ec); color: #0d0f14; }
+  .skin-bg .mesh { top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(160deg, #eef1f6, #d3d9e3 55%, #e7e2f1);
+    -webkit-mask-image: none; }
+  .skin-bg .mesh::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: .5;
+    background: linear-gradient(rgba(40, 50, 80, .07) 1px, transparent 1px) 0 0 / 48px 48px, linear-gradient(90deg, rgba(40, 50, 80, .07) 1px, transparent 1px) 0 0 / 48px 48px; }
+  .skin-bg .liq { border-radius: 50%; animation: skMorph 20s ease-in-out infinite alternate;
+    background: radial-gradient(circle at 30% 25%, #ffffff 0, rgba(255, 255, 255, 0) 22%),
+      conic-gradient(from 210deg, #c7f9ff, #b9a8ff, #ffd6e8, #fff3c4, #c9ffe0, #9fd8ff, #c7f9ff);
+    box-shadow: inset -30px -40px 80px rgba(30, 40, 70, .35), inset 20px 20px 50px rgba(255, 255, 255, .8), 0 30px 60px rgba(40, 50, 80, .18); }
+  .skin-bg .l1 { width: 460px; height: 460px; right: -120px; top: -90px; }
+  .skin-bg .l2 { width: 260px; height: 260px; left: -70px; bottom: 120px; animation-duration: 26s; animation-delay: -9s; }
+  .skin-bg .l3 { width: 120px; height: 120px; left: 46%; top: 34%; opacity: .8; animation-duration: 16s; animation-delay: -4s; }
+  @keyframes skMorph { 0% { border-radius: 50% 50% 50% 50%; transform: rotate(0); } 50% { border-radius: 58% 42% 46% 54% / 44% 58% 42% 56%; transform: rotate(40deg); }
+    100% { border-radius: 42% 58% 62% 38% / 56% 40% 60% 44%; transform: rotate(-20deg) scale(1.05); } }
+  .on-air .skin-bg .liq { animation-duration: 9s; }
+  @media (prefers-reduced-motion: reduce) { .skin-bg .rib, .skin-bg .orb, .skin-bg .liq { animation: none !important; } }
+  @media (max-width: 640px) {
+    .skin-bg .orb { width: 150px; height: 150px; right: -30px; bottom: 120px; }
+    .skin-bg .l1 { width: 300px; height: 300px; right: -110px; top: -60px; }
+    .skin-bg .l2 { width: 180px; height: 180px; left: -70px; }
+    .skin-bg .l3 { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .skin-bg .globe { width: 560px; height: 560px; right: -300px; top: 20px; }
+    .skin-bg .dial { top: auto; bottom: 110px; right: 16px; width: calc(100% - 32px); height: 76px; opacity: .9; }
+    .skin-bg .grille { width: 300px; height: 260px; right: -120px; bottom: auto; top: 30px; }
+    .skin-bg .sun { width: 240px; height: 240px; margin: -225px 0 0 -120px; }
+    .skin-bg .hud span { display: none; }
+    .skin-bg .cassette { width: 330px; right: -110px; bottom: 120px; }
+    .skin-bg .readout { display: none; }
+    .skins { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .skin-bg *, .skin-bg *::before { animation: none !important; transition: none !important; } }
+  /* ===== Темы радио в микшере: соответствие элементов (панель = карточка станции, кнопки трека = «чипсы») ===== */
+  :root[data-skin] body { color: var(--on-page, var(--text)); }
+  :root[data-skin] .sub, :root[data-skin] .status:not(.err), :root[data-skin] footer, :root[data-skin] .chainbox { color: var(--on-page-muted, var(--muted)); }
+  :root[data-skin] .panel, :root[data-skin] .player { color: var(--text); }
+  :root[data-skin] .num, :root[data-skin] .tool, :root[data-skin] .wf, :root[data-skin] .ov, :root[data-skin] .drop {
+    box-shadow: none; border: 1px solid var(--edge); background: var(--field, var(--bg)); }
+  :root[data-skin] .num { color: var(--text); }
+  :root[data-skin] .drop { color: var(--text); -webkit-backdrop-filter: var(--blur, none); backdrop-filter: var(--blur, none); }
+  :root[data-skin] .drop.over { border-color: var(--accent); }
+  :root[data-skin] .ib.on { color: var(--on-accent, var(--accent)); background: var(--accent); }
+  :root[data-skin] .rew { box-shadow: none; border: 1px solid var(--edge); }
+  :root[data-skin="pop"] .num, :root[data-skin="pop"] .tool, :root[data-skin="pop"] .wf, :root[data-skin="pop"] .ov, :root[data-skin="pop"] .drop,
+  :root[data-skin="pop"] .rew, :root[data-skin="pop"] .panel { border: 3px solid #111111; }
+  :root[data-skin="cyber"] .panel, :root[data-skin="cyber"] .num, :root[data-skin="cyber"] .tool, :root[data-skin="cyber"] .ib { border-radius: 0; }
+  :root[data-skin="studio"] .panel, :root[data-skin="studio"] .tool, :root[data-skin="studio"] .ib { border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="waves" aria-hidden="true"></div>
+<div class="skin-bg" id="skinBg" aria-hidden="true"></div>
+<header>
+  <div class="top">
+    <h1 data-i18n="brand">МИКШЕР</h1>
+    <div class="langs" role="group" aria-label="Язык / Language">
+      <button class="lang" type="button" data-lang="ru">RU</button>
+      <button class="lang" type="button" data-lang="en">EN</button>
+      <button class="lang" type="button" data-lang="fr">FR</button>
+    </div>
+    <button class="back skin-btn" id="homeBtn" type="button" data-i18n="home" hidden>🏠 Главная</button>
+    <a class="back skin-btn" href="./" data-i18n="back">← Радио</a>
+  </div>
+  <p class="sub" data-i18n="sub">Соберите свой микс: загрузите треки, подрежьте, наложите эффекты и включите.</p>
+  <div class="tools">
+    <button class="btn" id="addBtn" type="button" data-i18n="add">+ Добавить треки</button>
+    <span class="chainbox"><button class="btn" id="chainBtn" type="button" data-i18n="chain">Выстроить подряд</button>
+      <span data-i18n="overlap">наложение, с</span> <input class="num" id="overlap" type="number" min="0" max="30" step="0.5" value="3"></span>
+    <button class="btn" id="mixesBtn" type="button" data-i18n="mixes">Мои миксы</button>
+    <button class="btn" id="wavBtn" type="button" data-i18n="download">⤓ Скачать WAV</button>
+  </div>
+  <input id="file" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm" multiple hidden>
+</header>
+
+<main>
+  <div class="status" id="status" role="status"></div>
+  <div class="drop" id="drop"><b>♫</b><span data-i18n="drop">Перетащите сюда музыку (MP3, WAV, M4A…) или нажмите «Добавить треки».</span></div>
+  <!-- Пока треков нет — показываем, какие инструменты есть, и даём попробовать на демо-треках -->
+  <div class="panel card" id="intro">
+    <div class="tr-head"><h2 class="tr-name" data-i18n="toolsTitle">Инструменты микшера</h2>
+      <button class="btn" id="demoBtn" type="button" data-i18n="demo">▶ Попробовать на демо-треках</button></div>
+    <div class="tools-grid" id="toolsGrid"></div>
+  </div>
+  <div class="panel card" id="ovPanel" hidden>
+    <canvas class="ov" id="ov" height="80"></canvas>
+    <p class="hint" data-i18n="ovHint">Это ваш микс. Перетащите полосу, чтобы сдвинуть трек; нажмите на пустое место — перейти к этому моменту.</p>
+  </div>
+  <div id="tracks"></div>
+</main>
+<footer data-i18n="privacy">Музыка никуда не загружается: файлы и сохранённые миксы остаются только в этом браузере на этом устройстве.</footer>
+
+<div class="player">
+  <div class="player-in">
+    <button class="rew" id="rew" type="button" aria-label="В начало" data-i18n-title="toStart">⏮</button>
+    <button class="play" id="play" type="button" aria-label="Играть" disabled>▶</button>
+    <div class="pos">
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Позиция">
+      <div class="time"><span id="tNow">0:00</span><span id="tLen">0:00</span></div>
+    </div>
+    <div class="mvol">
+      <span data-i18n="master">Общая громкость</span>
+      <input type="range" id="mvol" min="0" max="150" value="100">
+      <label><input type="checkbox" id="comp"> <span data-i18n="comp">Ровная громкость</span></label>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="panel card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="tr-head"><h2 class="tr-name" id="mTitle" data-i18n="mixes">Мои миксы</h2>
+      <button class="ib" id="mClose" type="button" data-i18n-title="close">✕</button></div>
+    <div class="saverow"><input class="num" id="mixName" type="text" maxlength="60" data-i18n-ph="mixName">
+      <button class="btn" id="saveBtn" type="button" data-i18n="save">Сохранить</button></div>
+    <div id="mixList"></div>
+    <p class="hint" data-i18n="mixesHint">Миксы хранятся только в этом браузере на этом устройстве.</p>
+  </div>
+</div>
+
+<script>
+// Микшер РАДИО. Всё работает в браузере (Web Audio): файлы никуда не отправляются.
+// Без ?. ?? replaceAll — чтобы не падал старый Safari; ошибки показываем в строке статуса.
+window.onerror = function (msg) { var s = document.getElementById("status"); if (s) { s.textContent = "Ошибка: " + msg; s.className = "status err"; } };
+const $ = id => document.getElementById(id);
+function store(key, val) {
+  try {
+    if (val === undefined) return JSON.parse(localStorage.getItem(key));
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) { return null; }
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+// ---------- Языки: общий с радио выбор (radio.lang) ----------
+const T = {
+  ru: {
+    brand: "МИКШЕР", back: "← Радио", sub: "Соберите свой микс: загрузите треки, подрежьте, наложите эффекты и включите.",
+    add: "+ Добавить треки", chain: "Выстроить подряд", overlap: "наложение, с", mixes: "Мои миксы", download: "⤓ Скачать WAV",
+    drop: "Перетащите сюда музыку (MP3, WAV, M4A…) или нажмите «Добавить треки».",
+    ovHint: "Это ваш микс. Перетащите полосу, чтобы сдвинуть трек; нажмите на пустое место — перейти к этому моменту.",
+    wfHint: "Тяните маркеры на волне, чтобы обрезать начало и конец. Нажатие внутри — слушать с этого места.",
+    privacy: "Музыка никуда не загружается: файлы и сохранённые миксы остаются только в этом браузере на этом устройстве.",
+    master: "Общая громкость", comp: "Ровная громкость", toStart: "В начало", close: "Закрыть",
+    start: "Начало в миксе, с", trim: "Обрезка: с … по, с", vol: "Громкость", pan: "Баланс Л — П", fi: "Нарастание, с", fo: "Затухание, с",
+    fx: "Эффекты", lo: "Низкие", mid: "Средние", hi: "Высокие", rate: "Скорость (и тон)", echo: "Эхо", rev: "Зал",
+    mute: "Без звука", solo: "Соло — слушать только этот", up: "Выше", down: "Ниже", del: "Убрать трек",
+    loading: "Открываю «{n}»…", badFile: "Не удалось открыть «{n}»: этот браузер не знает такой формат.",
+    needTracks: "Сначала добавьте треки.", rendering: "Собираю файл… Длинный микс может готовиться минуту.",
+    rendered: "Готово: «{n}» сохранён в загрузки.", renderFail: "Не получилось собрать файл: {n}",
+    chained: "Треки выстроены подряд, переходы сведены.",
+    mixName: "Название микса", save: "Сохранить", open: "Открыть", empty: "Сохранённых миксов пока нет.",
+    saved: "Микс «{n}» сохранён на этом устройстве.", opened: "Открыт микс «{n}».", noDb: "Браузер не даёт сохранять (возможно, частный режим).",
+    confirmDel: "Удалить микс «{n}»?", confirmOpen: "Текущий микс не сохранён и будет заменён. Продолжить?", untitled: "Мой микс",
+    tracks: "треков: {n}", unsaved: "Несохранённый микс пропадёт.", audioOff: "Этот браузер не умеет обрабатывать звук. Откройте микшер в Chrome, Edge или Safari.",
+    home: "🏠 Главная", confirmHome: "Текущий микс не сохранён и будет закрыт. Вернуться на главную микшера?",
+    roAir: "● ИГРАЕТ", roPause: "○ ПАУЗА", roTracks: "ТРЕКОВ", roLen: "ДЛИНА", toolsTitle: "Инструменты микшера", demo: "▶ Попробовать на демо-треках", demoMaking: "Создаю демо-треки…", demoBeat: "Демо — ритм", demoChords: "Демо — аккорды",
+    demoReady: "Демо-треки готовы: нажмите ▶ внизу и крутите регуляторы.",
+    tools: [["✂️", "Обрезка", "маркеры на волне трека: убрать лишнее в начале и конце"], ["⏱", "Начало в миксе", "когда трек вступает; полосу можно тянуть на шкале"],
+      ["🔊", "Громкость и баланс", "уровень трека и левый/правый канал"], ["📈", "Нарастание и затухание", "плавное начало и конец, переходы между треками"],
+      ["🎛", "Эквалайзер", "низкие, средние и высокие частоты"], ["⏩", "Скорость", "быстрее или медленнее (тон меняется вместе с ней)"],
+      ["🔁", "Эхо", "повторы звука"], ["🏛", "Зал", "объём, как в большом помещении"],
+      ["🎧", "Соло и «Без звука»", "S — слушать один трек, M — заглушить"], ["🔗", "Выстроить подряд", "треки один за другим с наложением"],
+      ["🗜", "Ровная громкость", "компрессор на весь микс"], ["💾", "Скачать WAV и «Мои миксы»", "готовый файл и сохранение проекта"]]
+  },
+  en: {
+    brand: "MIXER", back: "← Radio", sub: "Build your own mix: load tracks, trim them, add effects and play.",
+    add: "+ Add tracks", chain: "Line up in order", overlap: "overlap, s", mixes: "My mixes", download: "⤓ Download WAV",
+    drop: "Drop music here (MP3, WAV, M4A…) or tap “Add tracks”.",
+    ovHint: "This is your mix. Drag a bar to move a track; tap an empty spot to jump there.",
+    wfHint: "Drag the markers on the waveform to trim the start and end. Tap inside to listen from there.",
+    privacy: "Your music is never uploaded: files and saved mixes stay only in this browser on this device.",
+    master: "Master volume", comp: "Even loudness", toStart: "To start", close: "Close",
+    start: "Start in mix, s", trim: "Trim: from … to, s", vol: "Volume", pan: "Balance L — R", fi: "Fade in, s", fo: "Fade out, s",
+    fx: "Effects", lo: "Bass", mid: "Mids", hi: "Treble", rate: "Speed (and pitch)", echo: "Echo", rev: "Hall",
+    mute: "Mute", solo: "Solo — hear only this one", up: "Up", down: "Down", del: "Remove track",
+    loading: "Opening “{n}”…", badFile: "Couldn’t open “{n}”: this browser doesn’t support the format.",
+    needTracks: "Add some tracks first.", rendering: "Building the file… A long mix may take a minute.",
+    rendered: "Done: “{n}” saved to downloads.", renderFail: "Couldn’t build the file: {n}",
+    chained: "Tracks lined up, transitions crossfaded.",
+    mixName: "Mix name", save: "Save", open: "Open", empty: "No saved mixes yet.",
+    saved: "Mix “{n}” saved on this device.", opened: "Opened mix “{n}”.", noDb: "The browser doesn’t allow saving (private mode?).",
+    confirmDel: "Delete mix “{n}”?", confirmOpen: "The current mix isn’t saved and will be replaced. Continue?", untitled: "My mix",
+    tracks: "tracks: {n}", unsaved: "The unsaved mix will be lost.", audioOff: "This browser can’t process audio. Open the mixer in Chrome, Edge or Safari.",
+    home: "🏠 Home", confirmHome: "The current mix isn’t saved and will be closed. Go back to the mixer home?",
+    roAir: "● PLAYING", roPause: "○ PAUSED", roTracks: "TRACKS", roLen: "LENGTH", toolsTitle: "Mixer tools", demo: "▶ Try with demo tracks", demoMaking: "Creating demo tracks…", demoBeat: "Demo — beat", demoChords: "Demo — chords",
+    demoReady: "Demo tracks are ready: press ▶ below and play with the controls.",
+    tools: [["✂️", "Trim", "markers on the waveform cut the start and end"], ["⏱", "Start in mix", "when the track comes in; drag its bar on the timeline"],
+      ["🔊", "Volume and balance", "track level and left/right"], ["📈", "Fade in and out", "smooth starts, ends and transitions"],
+      ["🎛", "Equalizer", "bass, mids and treble"], ["⏩", "Speed", "faster or slower (pitch changes too)"],
+      ["🔁", "Echo", "repeats of the sound"], ["🏛", "Hall", "space, like a big room"],
+      ["🎧", "Solo and Mute", "S — hear one track, M — silence it"], ["🔗", "Line up in order", "tracks one after another with overlap"],
+      ["🗜", "Even loudness", "compressor on the whole mix"], ["💾", "Download WAV and My mixes", "finished file and saved project"]]
+  },
+  fr: {
+    brand: "MIXEUR", back: "← Radio", sub: "Créez votre mix : chargez des morceaux, coupez-les, ajoutez des effets et écoutez.",
+    add: "+ Ajouter des morceaux", chain: "Enchaîner", overlap: "fondu, s", mixes: "Mes mix", download: "⤓ Télécharger WAV",
+    drop: "Déposez la musique ici (MP3, WAV, M4A…) ou touchez « Ajouter des morceaux ».",
+    ovHint: "Voici votre mix. Faites glisser une barre pour déplacer un morceau ; touchez un espace vide pour y aller.",
+    wfHint: "Faites glisser les repères sur l’onde pour couper le début et la fin. Touchez à l’intérieur pour écouter depuis là.",
+    privacy: "La musique n’est jamais envoyée : fichiers et mix restent uniquement dans ce navigateur, sur cet appareil.",
+    master: "Volume général", comp: "Volume régulier", toStart: "Au début", close: "Fermer",
+    start: "Début dans le mix, s", trim: "Coupe : de … à, s", vol: "Volume", pan: "Balance G — D", fi: "Fondu d’entrée, s", fo: "Fondu de sortie, s",
+    fx: "Effets", lo: "Graves", mid: "Médiums", hi: "Aigus", rate: "Vitesse (et ton)", echo: "Écho", rev: "Salle",
+    mute: "Muet", solo: "Solo — n’écouter que celui-ci", up: "Monter", down: "Descendre", del: "Retirer le morceau",
+    loading: "Ouverture de « {n} »…", badFile: "Impossible d’ouvrir « {n} » : format non pris en charge par ce navigateur.",
+    needTracks: "Ajoutez d’abord des morceaux.", rendering: "Préparation du fichier… Un long mix peut prendre une minute.",
+    rendered: "Terminé : « {n} » enregistré dans les téléchargements.", renderFail: "Impossible de créer le fichier : {n}",
+    chained: "Morceaux enchaînés, transitions en fondu.",
+    mixName: "Nom du mix", save: "Enregistrer", open: "Ouvrir", empty: "Aucun mix enregistré pour l’instant.",
+    saved: "Mix « {n} » enregistré sur cet appareil.", opened: "Mix « {n} » ouvert.", noDb: "Le navigateur n’autorise pas l’enregistrement (navigation privée ?).",
+    confirmDel: "Supprimer le mix « {n} » ?", confirmOpen: "Le mix actuel n’est pas enregistré et sera remplacé. Continuer ?", untitled: "Mon mix",
+    tracks: "morceaux : {n}", unsaved: "Le mix non enregistré sera perdu.", audioOff: "Ce navigateur ne sait pas traiter le son. Ouvrez le mixeur dans Chrome, Edge ou Safari.",
+    home: "🏠 Accueil", confirmHome: "Le mix actuel n’est pas enregistré et sera fermé. Revenir à l’accueil du mixeur ?",
+    roAir: "● EN LECTURE", roPause: "○ PAUSE", roTracks: "MORCEAUX", roLen: "DURÉE", toolsTitle: "Outils du mixeur", demo: "▶ Essayer avec des morceaux démo", demoMaking: "Création des morceaux démo…", demoBeat: "Démo — rythme", demoChords: "Démo — accords",
+    demoReady: "Les morceaux démo sont prêts : appuyez sur ▶ en bas et jouez avec les réglages.",
+    tools: [["✂️", "Coupe", "repères sur l’onde pour couper le début et la fin"], ["⏱", "Début dans le mix", "quand le morceau entre ; faites glisser sa barre"],
+      ["🔊", "Volume et balance", "niveau du morceau et gauche/droite"], ["📈", "Fondus", "débuts, fins et transitions en douceur"],
+      ["🎛", "Égaliseur", "graves, médiums et aigus"], ["⏩", "Vitesse", "plus vite ou plus lent (le ton change aussi)"],
+      ["🔁", "Écho", "répétitions du son"], ["🏛", "Salle", "de l’espace, comme une grande pièce"],
+      ["🎧", "Solo et Muet", "S — écouter un seul morceau, M — le couper"], ["🔗", "Enchaîner", "morceaux à la suite avec fondu"],
+      ["🗜", "Volume régulier", "compresseur sur tout le mix"], ["💾", "WAV et Mes mix", "fichier final et projet enregistré"]]
+  }
+};
+let lang = (location.search.match(/lang=(ru|en|fr)/) || [])[1] || store("radio.lang") ||
+  (/^(ru|be|kk|uk)/i.test(navigator.language || "") ? "ru" : /^fr/i.test(navigator.language || "") ? "fr" : "en");
+if (!T[lang]) lang = "ru";
+function t(key, n) { const v = T[lang][key] || T.ru[key] || key; return typeof v === "string" ? v.replace("{n}", n) : v; }
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t("brand");
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.getAttribute("data-i18n")); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.getAttribute("data-i18n-ph")); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.getAttribute("data-i18n-title")); el.setAttribute("aria-label", el.title); });
+  document.querySelectorAll(".lang").forEach(b => b.classList.toggle("on", b.getAttribute("data-lang") === lang));
+  $("toolsGrid").innerHTML = t("tools").map(x => `<div class="tool"><i aria-hidden="true">${x[0]}</i><div><b>${x[1]}</b><span>${x[2]}</span></div></div>`).join("");
+  renderTracks();
+}
+document.querySelectorAll(".lang").forEach(b => b.onclick = () => { lang = b.getAttribute("data-lang"); store("radio.lang", lang); applyLang(); });
+
+function status(msg, err) { $("status").textContent = msg || ""; $("status").className = "status" + (err ? " err" : ""); }
+function fmt(s) {
+  s = Math.round(Math.max(0, s || 0) * 10) / 10;
+  const m = Math.floor(s / 60), r = +(s - m * 60).toFixed(1);
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// ---------- Звук ----------
+const AC = window.AudioContext || window.webkitAudioContext;
+const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+let ctx = null;
+// Контекст создаём по нажатию пользователя (иначе айфон молчит)
+function audio() {
+  if (!ctx) {
+    ctx = new AC();
+    // iOS 17+: играть даже при выключенном звонке (переключатель «бесшумно»)
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+// decodeAudioData портит исходный буфер в части браузеров — отдаём копию; форма с колбэками нужна старому Safari
+function decode(data) {
+  return new Promise((ok, bad) => {
+    const p = audio().decodeAudioData(data.slice(0), ok, bad);
+    if (p && p.catch) p.catch(bad);
+  });
+}
+function readFile(f) {
+  return new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = bad; r.readAsArrayBuffer(f); });
+}
+
+// ---------- Микс ----------
+let tracks = [];   // { id, name, data (ArrayBuffer), buf (AudioBuffer), peaks, start, trimIn, trimOut, vol, pan, fi, fo, lo, mid, hi, rate, echo, rev, mute, solo }
+let nextId = 1;
+let mixName = "";
+let dirty = false;
+const master = { vol: 1, comp: false };
+
+function newTrack(name, data, buf) {
+  return { id: nextId++, name: name, data: data, buf: buf, peaks: peaks(buf),
+    start: mixLen(), trimIn: 0, trimOut: buf.duration, vol: 1, pan: 0, fi: 0, fo: 0,
+    lo: 0, mid: 0, hi: 0, rate: 1, echo: 0, rev: 0, mute: false, solo: false };
+}
+// Длина трека в миксе (с учётом обрезки и скорости)
+function tlen(tr) { return Math.max(0, (tr.trimOut - tr.trimIn) / tr.rate); }
+function mixLen() { let m = 0; tracks.forEach(tr => { m = Math.max(m, tr.start + tlen(tr)); }); return m; }
+function audible(tr) { return !tr.mute && (!tracks.some(x => x.solo) || tr.solo); }
+
+// Пики волны: 2000 столбиков min/max — рисуем быстро на любой ширине
+function peaks(buf) {
+  const N = 2000, a = buf.getChannelData(0), b = buf.numberOfChannels > 1 ? buf.getChannelData(1) : a;
+  const step = a.length / N, out = new Float32Array(N * 2);
+  for (let i = 0; i < N; i++) {
+    let mn = 1, mx = -1;
+    const s = Math.floor(i * step), e = Math.min(a.length, Math.floor((i + 1) * step));
+    const inc = Math.max(1, Math.floor((e - s) / 400));   // в длинных треках берём выборку — хватает для картинки
+    for (let j = s; j < e; j += inc) { const v = (a[j] + b[j]) / 2; if (v < mn) mn = v; if (v > mx) mx = v; }
+    out[i * 2] = mn > mx ? 0 : mn; out[i * 2 + 1] = mn > mx ? 0 : mx;
+  }
+  // Тихие записи растягиваем по высоте (как в звуковых редакторах) — громкость звука это не меняет
+  let top = 0;
+  for (let i = 0; i < out.length; i++) top = Math.max(top, Math.abs(out[i]));
+  const k = top > 0 ? Math.min(1 / top, 20) : 1;
+  for (let i = 0; i < out.length; i++) out[i] *= k;
+  return out;
+}
+
+// Реверберация «зал»: импульс из затухающего шума, один на контекст
+function impulse(c) {
+  if (c._ir) return c._ir;
+  const len = Math.floor(c.sampleRate * 2.4), ir = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  }
+  return (c._ir = ir);
+}
+function masterChain(c) {
+  const g = c.createGain(); g.gain.value = master.vol;
+  if (master.comp) {
+    const k = c.createDynamicsCompressor();
+    k.threshold.value = -20; k.knee.value = 12; k.ratio.value = 4; k.attack.value = .005; k.release.value = .25;
+    g.connect(k); k.connect(c.destination);
+  } else g.connect(c.destination);
+  return g;
+}
+// Цепочка одного трека: источник → нарастание/затухание → эквалайзер → громкость → баланс → микс (+ эхо и зал параллельно)
+// when — время контекста, когда зазвучит; off — с какой секунды трека (в секундах микса) начинаем
+function chain(c, tr, out, when, off) {
+  const dur = tlen(tr);
+  const src = c.createBufferSource(); src.buffer = tr.buf; src.playbackRate.value = tr.rate;
+  const fade = c.createGain();
+  const lo = c.createBiquadFilter(); lo.type = "lowshelf"; lo.frequency.value = 200; lo.gain.value = tr.lo;
+  const mid = c.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1000; mid.Q.value = .8; mid.gain.value = tr.mid;
+  const hi = c.createBiquadFilter(); hi.type = "highshelf"; hi.frequency.value = 4000; hi.gain.value = tr.hi;
+  const vol = c.createGain(); vol.gain.value = audible(tr) ? tr.vol : 0;
+  src.connect(fade); fade.connect(lo); lo.connect(mid); mid.connect(hi); hi.connect(vol);
+  let last = vol, pan = null;
+  if (c.createStereoPanner) { pan = c.createStereoPanner(); pan.pan.value = tr.pan; }
+  else { pan = c.createPanner(); pan.panningModel = "equalpower"; pan.setPosition(tr.pan, 0, 1 - Math.abs(tr.pan)); }
+  vol.connect(pan); last = pan;
+  last.connect(out);
+  const dl = c.createDelay(2), fb = c.createGain(), ew = c.createGain();
+  dl.delayTime.value = .33; fb.gain.value = .38; ew.gain.value = tr.echo * .7;
+  last.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(ew); ew.connect(out);
+  const cv = c.createConvolver(), rw = c.createGain();
+  cv.buffer = impulse(c); rw.gain.value = tr.rev * .9;
+  last.connect(cv); cv.connect(rw); rw.connect(out);
+  // Нарастание и затухание — по точкам на шкале трека; начинаем с середины, если включили не с начала
+  const fi = Math.min(tr.fi, dur / 2), fo = Math.min(tr.fo, dur / 2);
+  const pts = [[0, fi > 0 ? 0 : 1], [fi, 1], [dur - fo, 1], [dur, fo > 0 ? 0 : 1]];
+  function at(x) {
+    for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) {
+      const a = pts[i - 1], b = pts[i]; return b[0] === a[0] ? b[1] : a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]);
+    }
+    return pts[pts.length - 1][1];
+  }
+  const t0 = when - off;
+  fade.gain.setValueAtTime(at(off), when);
+  pts.forEach(p => { if (p[0] > off) fade.gain.linearRampToValueAtTime(p[1], t0 + p[0]); });
+  src.start(when, tr.trimIn + off * tr.rate, (dur - off) * tr.rate);
+  return { src: src, vol: vol, pan: pan, lo: lo, mid: mid, hi: hi, ew: ew, rw: rw, all: [src, fade, lo, mid, hi, vol, pan, dl, fb, ew, cv, rw] };
+}
+
+// ---------- Воспроизведение ----------
+let playing = false, startedAt = 0, fromPos = 0, live = {}, masterNode = null, raf = 0;
+function pos() { return playing ? fromPos + (ctx.currentTime - startedAt) : fromPos; }
+function startAt(p) {
+  const c = audio();
+  masterNode = masterChain(c);
+  const now = c.currentTime + .05;
+  live = {};
+  tracks.forEach(tr => {
+    const s = tr.start, d = tlen(tr);
+    if (d <= 0 || p >= s + d) return;
+    const off = Math.max(0, p - s);
+    live[tr.id] = chain(c, tr, masterNode, now + Math.max(0, s - p), off);
+  });
+  startedAt = now; fromPos = p; playing = true;
+  $("play").textContent = "⏸"; $("play").classList.add("on");
+  mediaSession(true);
+  document.documentElement.classList.add("on-air");   // темы радио оживляют фон, пока играет
+  cancelAnimationFrame(raf); tick();
+}
+function stopNodes() {
+  Object.keys(live).forEach(k => live[k].all.forEach(n => { try { if (n.stop) n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} }));
+  live = {};
+  if (masterNode) { try { masterNode.disconnect(); } catch (e) {} masterNode = null; }
+}
+function pause() {
+  if (!playing) return;
+  fromPos = pos(); stopNodes(); playing = false;
+  $("play").textContent = "▶"; $("play").classList.remove("on");
+  mediaSession(false);
+  document.documentElement.classList.remove("on-air");
+  cancelAnimationFrame(raf); showPos();
+}
+function seek(p) {
+  p = Math.max(0, Math.min(p, mixLen()));
+  if (playing) { stopNodes(); startAt(p); } else { fromPos = p; showPos(); }
+}
+// Изменили обрезку/начало/скорость — перезапускаем с того же места
+function restart() { if (playing) seek(pos()); else { fromPos = Math.min(fromPos, mixLen()); showPos(); } }
+// Громкость, баланс, эквалайзер, эхо, зал меняем на лету без перезапуска
+function applyLive(tr) {
+  const n = live[tr.id]; if (!n) return;
+  n.vol.gain.value = audible(tr) ? tr.vol : 0;
+  if (n.pan.pan) n.pan.pan.value = tr.pan; else n.pan.setPosition(tr.pan, 0, 1 - Math.abs(tr.pan));
+  n.lo.gain.value = tr.lo; n.mid.gain.value = tr.mid; n.hi.gain.value = tr.hi;
+  n.ew.gain.value = tr.echo * .7; n.rw.gain.value = tr.rev * .9;
+}
+function tick() {
+  if (!playing) return;
+  if (pos() >= mixLen() + .1) { pause(); fromPos = 0; showPos(); return; }
+  showPos();
+  raf = requestAnimationFrame(tick);
+}
+function showPos() {
+  const p = pos(), L = mixLen();
+  $("tNow").textContent = fmt(p); $("tLen").textContent = fmt(L);
+  if (!seeking) $("seek").value = L ? Math.round(p / L * 1000) : 0;
+  $("play").disabled = !tracks.length;
+  drawOverview();
+}
+let seeking = false;
+$("seek").oninput = () => { seeking = true; $("tNow").textContent = fmt($("seek").value / 1000 * mixLen()); };
+$("seek").onchange = () => { seeking = false; seek($("seek").value / 1000 * mixLen()); };
+$("play").onclick = () => {
+  if (playing) return pause();
+  if (!tracks.length) return;
+  if (fromPos >= mixLen()) fromPos = 0;
+  startAt(fromPos);
+};
+$("rew").onclick = () => seek(0);
+$("mvol").oninput = () => { master.vol = $("mvol").value / 100; if (masterNode) masterNode.gain.value = master.vol; store("mixer.vol", master.vol); };
+$("comp").onchange = () => { master.comp = $("comp").checked; restart(); };
+(function () { const v = store("mixer.vol"); if (typeof v === "number") { master.vol = v; $("mvol").value = Math.round(v * 100); } })();
+
+// Экран блокировки: название микса и кнопки ▶/⏸
+function mediaSession(on) {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    if (on) navigator.mediaSession.metadata = new MediaMetadata({ title: mixName || t("untitled"), artist: t("brand") + " · РАДИО",
+      artwork: [{ src: "mixer-icon-512.png", sizes: "512x512", type: "image/png" }] });
+    navigator.mediaSession.playbackState = on ? "playing" : "paused";
+    navigator.mediaSession.setActionHandler("play", () => { if (!playing) $("play").click(); });
+    navigator.mediaSession.setActionHandler("pause", pause);
+  } catch (e) {}
+}
+
+// ---------- Загрузка файлов ----------
+$("addBtn").onclick = () => $("file").click();
+$("drop").onclick = () => $("file").click();
+$("file").onchange = () => { addFiles($("file").files); $("file").value = ""; };
+["dragenter", "dragover"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === "drop" || !e.relatedTarget) $("drop").classList.remove("over"); }));
+document.addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+
+async function addFiles(list) {
+  if (!AC) return status(t("audioOff"), true);
+  audio();
+  const files = Array.prototype.slice.call(list);
+  let fail = "";
+  for (const f of files) {
+    status(t("loading", f.name));
+    try {
+      const data = await readFile(f);
+      const buf = await decode(data);
+      tracks.push(newTrack(f.name.replace(/\.[^.]+$/, ""), data, buf));
+      dirty = true;
+    } catch (e) { fail = f.name; }
+  }
+  status(fail ? t("badFile", fail) : "", !!fail);
+  renderTracks(); showPos();
+}
+
+// Выстроить подряд: каждый следующий начинается до конца предыдущего на «наложение», переходы плавные
+$("chainBtn").onclick = () => {
+  if (!tracks.length) return status(t("needTracks"), true);
+  const x = Math.max(0, parseFloat($("overlap").value) || 0);
+  let end = 0;
+  tracks.forEach((tr, i) => {
+    const ov = Math.min(x, tlen(tr) / 2);
+    tr.start = i ? Math.max(0, end - ov) : 0;
+    if (i) tr.fi = Math.max(tr.fi, ov);
+    if (i < tracks.length - 1) tr.fo = Math.max(tr.fo, Math.min(x, tlen(tr) / 2));
+    end = tr.start + tlen(tr);
+  });
+  dirty = true;
+  renderTracks(); restart(); status(t("chained"));
+};
+
+// Главная микшера: закрыть текущий микс и вернуться к стартовому экрану (кнопка «Главная» и заголовок)
+function goHome() {
+  if (!tracks.length) return;
+  if (dirty && !confirm(t("confirmHome"))) return;
+  pause(); stopNodes();
+  tracks = []; fromPos = 0; mixName = ""; dirty = false;
+  status(""); renderTracks(); showPos();
+  window.scrollTo(0, 0);
+}
+$("homeBtn").onclick = goHome;
+document.querySelector("h1").onclick = goHome;
+
+// ---------- Демо-треки: синтезируем прямо в браузере, чтобы попробовать инструменты без своей музыки ----------
+function render(oc) {
+  return new Promise((ok, bad) => {
+    oc.oncomplete = e => ok(e.renderedBuffer);
+    const p = oc.startRendering(); if (p && p.catch) p.catch(bad);
+  });
+}
+function synth(kind) {
+  const sr = 44100, sec = 16, oc = new OAC(2, sec * sr, sr);
+  if (kind === "beat") {   // 120 ударов в минуту: бочка на каждую долю, хэт между ними
+    const nb = oc.createBuffer(1, sr / 10, sr), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    for (let i = 0; i < sec * 2; i++) {
+      const t0 = i * .5, o = oc.createOscillator(), g = oc.createGain();
+      o.frequency.setValueAtTime(150, t0); o.frequency.exponentialRampToValueAtTime(40, t0 + .15);
+      g.gain.setValueAtTime(.9, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .35);
+      o.connect(g); g.connect(oc.destination); o.start(t0); o.stop(t0 + .4);
+      const n = oc.createBufferSource(), hp = oc.createBiquadFilter(), hg = oc.createGain(), t1 = t0 + .25;
+      n.buffer = nb; hp.type = "highpass"; hp.frequency.value = 7000;
+      hg.gain.setValueAtTime(.35, t1); hg.gain.exponentialRampToValueAtTime(.001, t1 + .06);
+      n.connect(hp); hp.connect(hg); hg.connect(oc.destination); n.start(t1); n.stop(t1 + .08);
+    }
+  } else {                 // аккорды Am — G — F — G, по 4 секунды
+    const chords = [[220, 261.6, 329.6], [196, 246.9, 293.7], [174.6, 220, 261.6], [196, 246.9, 293.7]];
+    const lp = oc.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400; lp.connect(oc.destination);
+    chords.forEach((ch, k) => ch.forEach(f => {
+      const t0 = k * 4, o = oc.createOscillator(), g = oc.createGain();
+      o.type = "sawtooth"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.09, t0 + .08);
+      g.gain.setValueAtTime(.09, t0 + 3.6); g.gain.linearRampToValueAtTime(0, t0 + 4);
+      o.connect(g); g.connect(lp); o.start(t0); o.stop(t0 + 4);
+    }));
+  }
+  return render(oc);
+}
+$("demoBtn").onclick = async () => {
+  if (!AC || !OAC) return status(t("audioOff"), true);
+  audio(); status(t("demoMaking")); $("demoBtn").disabled = true;
+  try {
+    for (const k of ["beat", "chords"]) {
+      const buf = await synth(k), data = await readFile(wav(buf));
+      const tr = newTrack(t(k === "beat" ? "demoBeat" : "demoChords"), data, buf);
+      tr.start = 0;   // демо звучат одновременно: ритм под аккорды
+      tracks.push(tr);
+    }
+    tracks[0].open = true;
+    status(t("demoReady"));
+  } catch (e) { status(t("renderFail", e && e.message || e), true); }
+  $("demoBtn").disabled = false;
+  renderTracks(); showPos();
+};
+
+// ---------- Карточки треков ----------
+const RANGES = {   // ключ: [мин, макс, шаг, как показать, на лету?]
+  vol: [0, 1.5, .01, v => Math.round(v * 100) + "%", true],
+  pan: [-1, 1, .05, v => v === 0 ? "0" : (v < 0 ? "Л " : "П ") + Math.round(Math.abs(v) * 100), true],
+  fi: [0, 15, .5, v => v + " с", false],
+  fo: [0, 15, .5, v => v + " с", false],
+  lo: [-12, 12, 1, v => (v > 0 ? "+" : "") + v + " дБ", true],
+  mid: [-12, 12, 1, v => (v > 0 ? "+" : "") + v + " дБ", true],
+  hi: [-12, 12, 1, v => (v > 0 ? "+" : "") + v + " дБ", true],
+  rate: [.5, 2, .05, v => v.toFixed(2) + "×", false],
+  echo: [0, 1, .05, v => Math.round(v * 100) + "%", true],
+  rev: [0, 1, .05, v => Math.round(v * 100) + "%", true]
+};
+function unit(s) { return lang === "ru" ? s : s.replace(" с", " s").replace(" дБ", " dB").replace("Л ", lang === "fr" ? "G " : "L ").replace("П ", lang === "fr" ? "D " : "R "); }
+function range(tr, k) {
+  const r = RANGES[k];
+  return `<label class="ctl"><span class="lbl"><span>${t(k)}</span><output>${unit(r[3](tr[k]))}</output></span>
+    <input type="range" data-k="${k}" min="${r[0]}" max="${r[1]}" step="${r[2]}" value="${tr[k]}"></label>`;
+}
+function renderTracks() {
+  $("drop").hidden = tracks.length > 0;
+  $("intro").hidden = tracks.length > 0;
+  $("homeBtn").hidden = !tracks.length;
+  document.querySelector("h1").classList.toggle("home", tracks.length > 0);
+  $("ovPanel").hidden = !tracks.length;
+  $("tracks").innerHTML = tracks.map((tr, i) => `
+    <div class="panel card" data-id="${tr.id}">
+      <div class="tr-head">
+        <div class="tr-name" title="${esc(tr.name)}">${i + 1}. ${esc(tr.name)}<small>${fmt(tlen(tr))}</small></div>
+        <button class="ib chip${tr.mute ? " on" : ""}" type="button" data-a="mute" title="${t("mute")}">M</button>
+        <button class="ib chip${tr.solo ? " on" : ""}" type="button" data-a="solo" title="${t("solo")}">S</button>
+        <button class="ib chip" type="button" data-a="up" title="${t("up")}"${i ? "" : " disabled"}>▲</button>
+        <button class="ib chip" type="button" data-a="down" title="${t("down")}"${i < tracks.length - 1 ? "" : " disabled"}>▼</button>
+        <button class="ib chip del" type="button" data-a="del" title="${t("del")}">✕</button>
+      </div>
+      <canvas class="wf" height="90"></canvas>
+      ${i ? "" : `<p class="hint">${t("wfHint")}</p>`}
+      <div class="grid">
+        <label class="ctl"><span class="lbl"><span>${t("start")}</span></span>
+          <input class="num" type="number" data-k="start" min="0" step="0.1" value="${tr.start.toFixed(1)}" style="width:100%"></label>
+        <label class="ctl"><span class="lbl"><span>${t("trim")}</span></span>
+          <span class="pair"><input class="num" type="number" data-k="trimIn" min="0" step="0.1" value="${tr.trimIn.toFixed(1)}">
+          <input class="num" type="number" data-k="trimOut" min="0" step="0.1" value="${tr.trimOut.toFixed(1)}"></span></label>
+        ${range(tr, "vol")}${range(tr, "pan")}${range(tr, "fi")}${range(tr, "fo")}
+      </div>
+      <details${tr.open ? " open" : ""}><summary>${t("fx")}</summary>
+        <div class="grid">${range(tr, "lo")}${range(tr, "mid")}${range(tr, "hi")}${range(tr, "rate")}${range(tr, "echo")}${range(tr, "rev")}</div>
+      </details>
+    </div>`).join("");
+  $("tracks").querySelectorAll(".panel").forEach(p => {
+    const tr = byId(+p.getAttribute("data-id"));
+    wfBind(p.querySelector(".wf"), tr);
+    p.querySelector("details").ontoggle = e => { tr.open = e.target.open; };
+  });
+  redrawAll();
+  paintArt();   // тема «Обложка»: цвета фона под треки
+}
+function byId(id) { for (const tr of tracks) if (tr.id === id) return tr; return null; }
+function card(tr) { return $("tracks").querySelector('.panel[data-id="' + tr.id + '"]'); }
+function setNum(tr, k) { const el = card(tr) && card(tr).querySelector('[data-k="' + k + '"]'); if (el) el.value = tr[k].toFixed(1); }
+function setLen(tr) { const el = card(tr) && card(tr).querySelector(".tr-name small"); if (el) el.textContent = fmt(tlen(tr)); }
+
+$("tracks").addEventListener("input", e => {
+  const el = e.target, k = el.getAttribute("data-k"); if (!k || !RANGES[k]) return;
+  const tr = byId(+el.closest(".panel").getAttribute("data-id"));
+  tr[k] = parseFloat(el.value); dirty = true;
+  el.parentNode.querySelector("output").textContent = unit(RANGES[k][3](tr[k]));
+  if (RANGES[k][4]) applyLive(tr);
+  if (k === "rate") { setLen(tr); drawOverview(); }
+});
+$("tracks").addEventListener("change", e => {
+  const el = e.target, k = el.getAttribute("data-k"); if (!k) return;
+  const tr = byId(+el.closest(".panel").getAttribute("data-id"));
+  if (!RANGES[k]) {   // числа: начало и обрезка
+    let v = parseFloat(el.value); if (isNaN(v)) v = tr[k];
+    const D = tr.buf.duration;
+    if (k === "start") v = Math.max(0, v);
+    if (k === "trimIn") v = Math.max(0, Math.min(v, tr.trimOut - .1));
+    if (k === "trimOut") v = Math.min(D, Math.max(v, tr.trimIn + .1));
+    tr[k] = v; el.value = v.toFixed(1); dirty = true;
+    setLen(tr); drawWave(card(tr).querySelector(".wf"), tr);
+  }
+  if (!RANGES[k] || !RANGES[k][4]) restart();
+  drawOverview();
+});
+$("tracks").addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const tr = byId(+b.closest(".panel").getAttribute("data-id")), i = tracks.indexOf(tr), a = b.getAttribute("data-a");
+  if (a === "mute" || a === "solo") { tr[a] = !tr[a]; b.classList.toggle("on", tr[a]); tracks.forEach(applyLive); drawOverview(); return; }
+  if (a === "up" && i > 0) { tracks.splice(i, 1); tracks.splice(i - 1, 0, tr); }
+  if (a === "down" && i < tracks.length - 1) { tracks.splice(i, 1); tracks.splice(i + 1, 0, tr); }
+  if (a === "del") { tracks.splice(i, 1); if (!tracks.length) { pause(); fromPos = 0; } }
+  dirty = true; renderTracks(); restart(); showPos();
+});
+
+// ---------- Волна трека: маркеры обрезки ----------
+function fit(cv) {
+  const r = window.devicePixelRatio || 1, w = Math.max(1, Math.round(cv.clientWidth * r)), h = Math.round(cv.clientHeight * r);
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return r;
+}
+function drawWave(cv, tr) {
+  if (!cv.clientWidth) return;
+  const r = fit(cv), g = cv.getContext("2d"), W = cv.width, H = cv.height, P = tr.peaks, N = P.length / 2, D = tr.buf.duration;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = css("--wave");
+  if (document.documentElement.hasAttribute("data-skin")) { g.fillStyle = css("--accent"); g.globalAlpha = .6; }
+  for (let x = 0; x < W; x++) {
+    const i0 = Math.floor(x / W * N), i1 = Math.max(i0 + 1, Math.floor((x + 1) / W * N));
+    let mn = 0, mx = 0;
+    for (let i = i0; i < i1 && i < N; i++) { if (P[i * 2] < mn) mn = P[i * 2]; if (P[i * 2 + 1] > mx) mx = P[i * 2 + 1]; }
+    g.fillRect(x, H / 2 - mx * H * .46, 1, Math.max(1, (mx - mn) * H * .46));
+  }
+  const a = tr.trimIn / D * W, b = tr.trimOut / D * W;
+  g.globalAlpha = 1;
+  g.fillStyle = css("--cut"); g.fillRect(0, 0, a, H); g.fillRect(b, 0, W - b, H);
+  g.fillStyle = css("--accent");
+  [a, b].forEach((x, k) => {
+    g.fillRect(x - r, 0, 2 * r, H);
+    g.fillRect(k ? x - 10 * r : x, H / 2 - 14 * r, 10 * r, 28 * r);   // «ручки» внутрь выделения
+  });
+  // Позиция воспроизведения внутри трека
+  const p = pos();
+  if (p >= tr.start && p <= tr.start + tlen(tr) && (playing || p > 0)) {
+    const x = (tr.trimIn + (p - tr.start) * tr.rate) / D * W;
+    g.fillStyle = css("--hot"); g.fillRect(x - r / 2, 0, r, H);
+  }
+}
+function wfBind(cv, tr) {
+  let drag = null;
+  function sec(e) { const b = cv.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)) * tr.buf.duration; }
+  cv.addEventListener("pointerdown", e => {
+    const b = cv.getBoundingClientRect(), px = e.clientX - b.left, D = tr.buf.duration;
+    const ax = tr.trimIn / D * b.width, bx = tr.trimOut / D * b.width;
+    drag = Math.abs(px - ax) < 16 && Math.abs(px - ax) <= Math.abs(px - bx) ? "trimIn" : Math.abs(px - bx) < 16 ? "trimOut" : "seek";
+    if (drag !== "seek") { cv.setPointerCapture(e.pointerId); e.preventDefault(); }
+  });
+  cv.addEventListener("pointermove", e => {
+    if (drag !== "trimIn" && drag !== "trimOut") return;
+    const s = Math.round(sec(e) * 10) / 10;
+    if (drag === "trimIn") tr.trimIn = Math.min(s, tr.trimOut - .1); else tr.trimOut = Math.max(s, tr.trimIn + .1);
+    setNum(tr, drag); setLen(tr); drawWave(cv, tr); drawOverview();
+  });
+  cv.addEventListener("pointerup", e => {
+    if (drag === "seek") {
+      const s = sec(e);
+      if (s >= tr.trimIn && s <= tr.trimOut) seek(tr.start + (s - tr.trimIn) / tr.rate);
+    } else if (drag) { dirty = true; restart(); }
+    drag = null;
+  });
+}
+
+// ---------- Общая шкала микса ----------
+const ROW = 22;
+function ovGeom() { const L = Math.max(mixLen() * 1.05, 10); return { L: L }; }
+function drawOverview() {
+  const cv = $("ov"); if (!tracks.length || !cv.clientWidth) return;
+  const want = Math.max(70, tracks.length * ROW + 26);
+  if (cv.clientHeight !== want) cv.style.height = want + "px";
+  const r = fit(cv), g = cv.getContext("2d"), W = cv.width, H = cv.height, L = ovGeom().L, k = W / L;
+  g.clearRect(0, 0, W, H);
+  // Шкала времени
+  const step = [5, 10, 15, 30, 60, 120, 300, 600].filter(s => L / s <= 12)[0] || 1200;
+  g.fillStyle = css("--muted"); g.font = (11 * r) + "px system-ui, sans-serif";
+  for (let s = 0; s < L; s += step) { g.fillRect(s * k, H - 14 * r, 1, 4 * r); g.fillText(fmt(s), s * k + 3 * r, H - 3 * r); }
+  // Полосы треков: скосы — нарастание и затухание
+  tracks.forEach((tr, i) => {
+    const y = (6 + i * ROW) * r, h = 16 * r, x0 = tr.start * k, x1 = (tr.start + tlen(tr)) * k;
+    const fi = Math.min(tr.fi, tlen(tr) / 2) * k, fo = Math.min(tr.fo, tlen(tr) / 2) * k;
+    g.globalAlpha = audible(tr) ? .85 : .3;
+    g.fillStyle = css("--accent");
+    g.beginPath(); g.moveTo(x0, y + h); g.lineTo(x0 + fi, y); g.lineTo(x1 - fo, y); g.lineTo(x1, y + h); g.closePath(); g.fill();
+    g.globalAlpha = 1;
+    g.fillStyle = css("--text"); g.font = (11 * r) + "px system-ui, sans-serif";
+    g.save(); g.beginPath(); g.rect(x0, y, Math.max(0, x1 - x0), h); g.clip();
+    g.fillStyle = css("--on-accent") || css("--bg"); g.fillText((i + 1) + ". " + tr.name, x0 + fi / 2 + 4 * r, y + 12 * r); g.restore();
+  });
+  g.fillStyle = css("--hot"); g.fillRect(pos() * k - r, 0, 2 * r, H);
+  // Красная черта и на волнах треков
+  $("tracks").querySelectorAll(".panel").forEach(p => { const tr = byId(+p.getAttribute("data-id")); if (tr) drawWave(p.querySelector(".wf"), tr); });
+}
+(function () {
+  const cv = $("ov"); let drag = null, moved = false;
+  function sec(e) { const b = cv.getBoundingClientRect(); return (e.clientX - b.left) / b.width * ovGeom().L; }
+  cv.addEventListener("pointerdown", e => {
+    const b = cv.getBoundingClientRect(), y = e.clientY - b.top, s = sec(e), i = Math.floor((y - 6) / ROW), tr = tracks[i];
+    moved = false;
+    drag = tr && s >= tr.start && s <= tr.start + tlen(tr) ? { tr: tr, dx: s - tr.start } : { seek: true };
+    if (drag.tr) { cv.setPointerCapture(e.pointerId); e.preventDefault(); }
+  });
+  cv.addEventListener("pointermove", e => {
+    if (!drag || !drag.tr) return;
+    const v = Math.max(0, Math.round((sec(e) - drag.dx) * 10) / 10);
+    if (v !== drag.tr.start) { drag.tr.start = v; moved = true; setNum(drag.tr, "start"); drawOverview(); showPos(); }
+  });
+  cv.addEventListener("pointerup", e => {
+    if (!drag) return;
+    if (drag.tr && moved) { dirty = true; restart(); }
+    else seek(sec(e));
+    drag = null;
+  });
+})();
+window.redrawAll = function () { drawOverview(); };
+window.addEventListener("resize", () => redrawAll());
+
+// ---------- Скачать WAV ----------
+$("wavBtn").onclick = () => {
+  if (!tracks.length) return status(t("needTracks"), true);
+  if (!OAC) return status(t("audioOff"), true);
+  const sr = 44100, tail = tracks.some(tr => tr.echo > 0 || tr.rev > 0) ? 3 : .1;
+  const len = Math.ceil((mixLen() + tail) * sr);
+  status(t("rendering")); $("wavBtn").disabled = true;
+  setTimeout(() => {
+    try {
+      const oc = new OAC(2, len, sr), out = masterChain(oc);
+      tracks.forEach(tr => { if (tlen(tr) > 0) chain(oc, tr, out, tr.start, 0); });
+      oc.oncomplete = ev => {
+        const name = (mixName || t("untitled")).replace(/[\\/:*?"<>|]+/g, " ").trim() + ".wav";
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(wav(ev.renderedBuffer)); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+        status(t("rendered", name)); $("wavBtn").disabled = false;
+      };
+      const p = oc.startRendering();
+      if (p && p.catch) p.catch(err => { status(t("renderFail", err.message || err), true); $("wavBtn").disabled = false; });
+    } catch (err) { status(t("renderFail", err.message || err), true); $("wavBtn").disabled = false; }
+  }, 30);
+};
+// WAV 16 бит стерео: открывается везде
+function wav(b) {
+  const n = b.length, ch = 2, L = b.getChannelData(0), R = b.numberOfChannels > 1 ? b.getChannelData(1) : L;
+  const buf = new ArrayBuffer(44 + n * ch * 2), v = new DataView(buf);
+  function str(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  str(0, "RIFF"); v.setUint32(4, 36 + n * ch * 2, true); str(8, "WAVE"); str(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true); v.setUint32(24, b.sampleRate, true);
+  v.setUint32(28, b.sampleRate * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
+  str(36, "data"); v.setUint32(40, n * ch * 2, true);
+  let o = 44;
+  for (let i = 0; i < n; i++) {
+    let s = Math.max(-1, Math.min(1, L[i])); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2;
+    s = Math.max(-1, Math.min(1, R[i])); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2;
+  }
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+// ---------- Мои миксы: IndexedDB в этом браузере ----------
+const KEYS = ["name", "start", "trimIn", "trimOut", "vol", "pan", "fi", "fo", "lo", "mid", "hi", "rate", "echo", "rev", "mute", "solo"];
+function db() {
+  return new Promise((ok, bad) => {
+    if (!window.indexedDB) return bad(new Error("no db"));
+    const r = indexedDB.open("radioMixer", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("mixes", { keyPath: "id" });
+    r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error);
+  });
+}
+function req(mode, fn) {
+  return db().then(d => new Promise((ok, bad) => {
+    const tx = d.transaction("mixes", mode), r = fn(tx.objectStore("mixes"));
+    tx.oncomplete = () => ok(r && r.result); tx.onerror = () => bad(tx.error); tx.onabort = () => bad(tx.error);
+  }));
+}
+function listMixes() {
+  req("readonly", s => s.getAll ? s.getAll() : null).then(all => {
+    all = (all || []).sort((a, b) => b.saved - a.saved);
+    $("mixList").innerHTML = all.length ? all.map(m => `
+      <div class="mix"><div class="tr-name">${esc(m.name)}<small>${new Date(m.saved).toLocaleString(lang)} · ${t("tracks", m.tracks.length)}</small></div>
+        <button class="btn" type="button" data-open="${m.id}">${t("open")}</button>
+        <button class="ib del" type="button" data-del="${m.id}" data-n="${esc(m.name)}" title="${t("del")}">✕</button></div>`).join("")
+      : `<p class="hint">${t("empty")}</p>`;
+  }).catch(() => { $("mixList").innerHTML = `<p class="hint">${t("noDb")}</p>`; });
+}
+$("mixesBtn").onclick = () => { $("mixName").value = mixName || t("untitled"); $("modal").hidden = false; listMixes(); };
+$("mClose").onclick = () => { $("modal").hidden = true; };
+$("modal").onclick = e => { if (e.target === $("modal")) $("modal").hidden = true; };
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") $("modal").hidden = true;
+  if (e.key === " " && !/INPUT|BUTTON|SELECT/.test(e.target.tagName)) { e.preventDefault(); $("play").click(); }
+});
+$("saveBtn").onclick = () => {
+  if (!tracks.length) return status(t("needTracks"), true);
+  const name = $("mixName").value.trim() || t("untitled");
+  // Одинаковое название — перезаписываем этот микс
+  req("readonly", s => s.getAll ? s.getAll() : null).then(all => {
+    const same = (all || []).filter(m => m.name === name)[0];
+    const rec = { id: same ? same.id : Date.now(), name: name, saved: Date.now(), master: { vol: master.vol, comp: master.comp },
+      tracks: tracks.map(tr => { const o = { data: tr.data }; KEYS.forEach(k => { o[k] = tr[k]; }); return o; }) };
+    return req("readwrite", s => s.put(rec));
+  }).then(() => { mixName = name; dirty = false; status(t("saved", name)); listMixes(); })
+    .catch(() => status(t("noDb"), true));
+};
+$("mixList").onclick = e => {
+  const o = e.target.closest("[data-open]"), d = e.target.closest("[data-del]");
+  if (d) {
+    if (!confirm(t("confirmDel", d.getAttribute("data-n")))) return;
+    req("readwrite", s => s.delete(+d.getAttribute("data-del"))).then(listMixes);
+  }
+  if (o) {
+    if (dirty && tracks.length && !confirm(t("confirmOpen"))) return;
+    req("readonly", s => s.get(+o.getAttribute("data-open"))).then(async m => {
+      pause(); $("modal").hidden = true;
+      const list = [];
+      for (const x of m.tracks) {
+        status(t("loading", x.name));
+        const buf = await decode(x.data), tr = newTrack(x.name, x.data, buf);
+        KEYS.forEach(k => { if (x[k] !== undefined) tr[k] = x[k]; });
+        list.push(tr);
+      }
+      tracks = list; mixName = m.name; dirty = false; fromPos = 0;
+      master.vol = m.master.vol; master.comp = m.master.comp;
+      $("mvol").value = Math.round(master.vol * 100); $("comp").checked = master.comp;
+      renderTracks(); showPos(); status(t("opened", m.name));
+    }).catch(err => status(t("renderFail", err && err.message || err), true));
+  }
+};
+window.addEventListener("beforeunload", e => { if (dirty && tracks.length) { e.preventDefault(); e.returnValue = t("unsaved"); return t("unsaved"); } });
+
+// ---------- Темы оформления радио. Узоры фона (skBars, SKIN_DECO) скопированы из index.html — меняете темы в радио, обновите и здесь ----------
+// Полосы эквалайзера и спектра: высота и ритм у каждой свои, чтобы не прыгали строем
+function skBars(n) {
+  let h = "";
+  for (let i = 0; i < n; i++) {
+    const base = 25 + 70 * Math.abs(Math.sin(i * 0.37) * Math.cos(i * 0.11));
+    h += '<i style="--h:' + base.toFixed(0) + '%;--t:' + (0.45 + (i * 7 % 10) / 14).toFixed(2) + 's;--d:-' + ((i * 13 % 17) / 10).toFixed(1) + 's"></i>';
+  }
+  return h;
+}
+const SKIN_DECO = {
+  minimal: () => '<svg class="globe" viewBox="-310 -310 620 620" fill="none" stroke="currentColor" stroke-opacity=".10" stroke-width="1.2">' +
+    '<circle r="300"/><ellipse rx="220" ry="300"/><ellipse rx="130" ry="300"/><ellipse rx="40" ry="300"/><path d="M0-300V300M-300 0H300M-283-100H283M-283 100H283M-224-200H224M-224 200H224"/>' +
+    '<circle class="dot" cx="-96" cy="-128" r="5" stroke="none"/><circle class="pulse" cx="-96" cy="-128" r="5"/>' +
+    '<circle class="dot" cx="120" cy="-60" r="3.5" stroke="none" fill-opacity=".6"/><circle class="dot" cx="40" cy="150" r="3.5" stroke="none" fill-opacity=".6"/></svg>',
+  glow: () => '<div class="neon"></div><div class="eq">' + skBars(48) + '</div><div class="scan"></div>',
+  vintage: () => '<div class="wood"></div><div class="grille"></div><div class="brass"></div><div class="dial">' +
+    '<svg viewBox="0 0 480 96" preserveAspectRatio="none" font-family="RoadRadio, sans-serif" font-weight="700"><g stroke="#ffc861" stroke-opacity=".75">' +
+    '<path d="M30 60H450" stroke-width="1.5"/><path d="M30 48v12M72 52v8M114 48v12M156 52v8M198 48v12M240 52v8M282 48v12M324 52v8M366 48v12M408 52v8M450 48v12" stroke-width="2"/></g>' +
+    '<g fill="#ffc861" font-size="15" text-anchor="middle"><text x="30" y="38">88</text><text x="114" y="38">92</text><text x="198" y="38">96</text>' +
+    '<text x="282" y="38">100</text><text x="366" y="38">104</text><text x="450" y="38">108</text></g>' +
+    '<text x="240" y="84" fill="#ffc861" fill-opacity=".6" font-size="11" text-anchor="middle" letter-spacing="3">FM · MHz</text></svg><span class="needle"></span></div>',
+  cyber: () => '<div class="sky"></div><div class="sun"></div><div class="floor"></div>' +
+    '<div class="hud"><i></i><i></i><i></i><i></i><span>SYS://RADIOGLOB<br>FREQ 101.7 MHz · SIG ▮▮▮▮▯</span><span>&gt; STREAM OK<br>&gt; NODE: RADIOGLOB.RU</span></div>',
+  glass: () => '<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="veil"></div>',
+  cassette: () => '<div class="dusk"></div><div class="stars"></div><div class="cassette"><svg viewBox="0 0 520 330">' +
+    '<rect x="4" y="4" width="512" height="322" rx="22" fill="#26232b" stroke="#3b3742" stroke-width="3"/><rect x="34" y="30" width="452" height="190" rx="12" fill="#f6ecdc"/>' +
+    '<rect x="34" y="62" width="452" height="14" fill="#c9542c"/><rect x="34" y="76" width="452" height="14" fill="#f2c46d"/><rect x="34" y="90" width="452" height="14" fill="#e58fa0"/>' +
+    '<text x="56" y="54" font-family="RoadRadio, sans-serif" font-size="22" font-weight="700" fill="#3a2622">LO-FI MIX</text>' +
+    '<text x="460" y="54" font-family="RoadRadio, sans-serif" font-size="22" font-weight="900" fill="#c9542c" text-anchor="end">A</text>' +
+    '<rect x="120" y="118" width="280" height="84" rx="42" fill="#2a2730"/><rect x="186" y="132" width="148" height="56" rx="6" fill="#1a181e" stroke="#4a4652"/>' +
+    '<path d="M190 170h140" stroke="#5a3a2e" stroke-width="14" opacity=".9"/>' +
+    '<g class="reel"><circle cx="160" cy="160" r="30" fill="#f6ecdc"/><circle cx="160" cy="160" r="12" fill="#2a2730"/><path d="M160 132v14M160 174v14M132 160h14M174 160h14" stroke="#2a2730" stroke-width="6" stroke-linecap="round"/></g>' +
+    '<g class="reel"><circle cx="360" cy="160" r="30" fill="#f6ecdc"/><circle cx="360" cy="160" r="12" fill="#2a2730"/><path d="M360 132v14M360 174v14M332 160h14M374 160h14" stroke="#2a2730" stroke-width="6" stroke-linecap="round"/></g>' +
+    '<path d="M110 326l26-70h248l26 70" fill="#322e38"/><circle cx="190" cy="292" r="9" fill="#1a181e"/><circle cx="330" cy="292" r="9" fill="#1a181e"/>' +
+    '<g fill="#5b5664"><circle cx="24" cy="24" r="5"/><circle cx="496" cy="24" r="5"/><circle cx="24" cy="306" r="5"/><circle cx="496" cy="306" r="5"/><circle cx="260" cy="244" r="5"/></g></svg></div>' +
+    '<svg class="grain"><filter id="skGrain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>' +
+    '<feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0"/></filter><rect width="100%" height="100%" filter="url(#skGrain)"/></svg>',
+  pop: () => '<div class="dots"></div><svg class="memphis" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" stroke="#111" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">' +
+    '<circle class="wob" cx="1360" cy="150" r="88" fill="#00c2c7"/><path class="wob" d="M70 640l70-120 70 120z" fill="#ff3d7f"/>' +
+    '<path d="M1040 70q30-40 60 0t60 0 60 0 60 0" fill="none"/><path d="M60 220l40-30 40 30 40-30 40 30 40-30" fill="none" stroke="#ff3d7f" stroke-width="8"/>' +
+    '<g transform="rotate(14 1255 635)"><rect x="1180" y="560" width="150" height="150" rx="6" fill="#fff"/><path d="M1195 590h120M1195 620h120M1195 650h120M1195 680h120" stroke-width="6"/></g>' +
+    '<path class="wob" d="M760 790h40M780 770v40" stroke-width="9"/><path d="M1380 420h30M1395 405v30" stroke-width="7"/>' +
+    '<path d="M300 820q40-60 80 0t80 0 80 0" fill="none" stroke="#00c2c7" stroke-width="10"/><circle cx="620" cy="60" r="16" fill="#111"/>' +
+    '<circle cx="1000" cy="840" r="22" fill="#ff3d7f"/><circle cx="130" cy="380" r="40" fill="none" stroke-width="7"/><path d="M880 120l26 16-26 16z" fill="#00c2c7"/></svg>',
+  studio: () => '<div class="sgrid"></div><div class="ruler"></div>' +
+    '<div class="wave"><svg viewBox="0 0 1440 160" preserveAspectRatio="none"><path d="M0 80C60 20 120 140 180 80S300 10 360 80 480 150 540 80 660 30 720 80 840 140 900 80 1020 15 1080 80 1200 145 1260 80 1380 30 1440 80" fill="none" stroke="#3fb950" stroke-opacity=".35" stroke-width="2"/></svg></div>' +
+    '<div class="spec">' + skBars(96) + '</div>' +
+    '<div class="readout"><span class="rec ro-air"></span><b class="ro-time">--:--:--</b><span class="ro-l1"></span><b class="ro-codec">—</b>' +
+    '<span class="ro-l2"></span><b class="ro-br">—</b><span class="ro-l3"></span><b class="ro-cc">—</b></div>',
+  art: () => '<div class="art show"></div><div class="art"></div><div class="veil"></div>',
+  aurora: () => '<div class="sky2"></div><div class="stars2"></div><div class="rib r1"></div><div class="rib r2"></div><div class="rib r3"></div><div class="orb"></div>',
+  chrome: () => '<div class="mesh"></div><div class="liq l1"></div><div class="liq l2"></div><div class="liq l3"></div>'
+};
+function currentSkin() { return document.documentElement.getAttribute("data-skin") || ""; }
+function applySkin(id) {
+  const root = document.documentElement;
+  if (id && window.SKIN_COLOR[id]) root.setAttribute("data-skin", id); else { root.removeAttribute("data-skin"); id = ""; }
+  $("skinBg").innerHTML = SKIN_DECO[id] ? SKIN_DECO[id]() : "";
+  if (window.applyDayNight) window.applyDayNight();
+  artKey = ""; paintArt(); tickReadout();
+}
+// «Обложка»: цвета фона — по названию микса и треков, при смене плавно перетекают
+const ART_PAL = [
+  ["#ff7a59", "#ffcf5c", "#7b2ff7", "#2a0e3b"], ["#00b4d8", "#90e0ef", "#023e8a", "#03045e"], ["#52b788", "#d8f3dc", "#1b4332", "#081c15"],
+  ["#ff4d8d", "#ffb3c6", "#5f0f40", "#2b0420"], ["#f4a261", "#e9c46a", "#e76f51", "#3d1d0f"], ["#9d4edd", "#e0aaff", "#3c096c", "#10002b"],
+  ["#06d6a0", "#ffd166", "#118ab2", "#073b4c"], ["#ef476f", "#ffd166", "#26547c", "#0b1d33"]
+];
+let artKey = "", artFlip = false;
+function paintArt() {
+  if (currentSkin() !== "art") return;
+  const key = mixName + "|" + tracks.map(x => x.name).join("|");
+  if (key === artKey) return;
+  artKey = key;
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  const p = ART_PAL[h % ART_PAL.length];
+  const layers = $("skinBg").querySelectorAll(".art");
+  if (layers.length < 2) return;
+  const show = layers[artFlip ? 1 : 0], hide = layers[artFlip ? 0 : 1];
+  artFlip = !artFlip;
+  show.style.background = "radial-gradient(circle at 20% 25%, " + p[0] + ", transparent 55%), radial-gradient(circle at 80% 20%, " + p[1] +
+    ", transparent 50%), radial-gradient(circle at 60% 85%, " + p[2] + ", transparent 55%), " + p[3];
+  show.classList.add("show"); hide.classList.remove("show");
+}
+// «Студия»: табло — играет или пауза, позиция, число треков и длина микса
+function tickReadout() {
+  if (currentSkin() !== "studio") return;
+  const bg = $("skinBg"), q = c => bg.querySelector(c);
+  if (!q(".readout")) return;
+  q(".ro-air").textContent = t(playing ? "roAir" : "roPause");
+  q(".ro-time").textContent = fmt(pos());
+  q(".ro-l1").textContent = t("roTracks"); q(".ro-codec").textContent = String(tracks.length);
+  q(".ro-l2").textContent = t("roLen"); q(".ro-br").textContent = fmt(mixLen());
+  q(".ro-l3").textContent = "WAV"; q(".ro-cc").textContent = "44.1k";
+}
+setInterval(tickReadout, 1000);
+// Тему или язык поменяли в радио в соседней вкладке — микшер переключается сразу
+window.addEventListener("storage", e => {
+  if (e.key === "radio.skin") { let v = ""; try { v = JSON.parse(e.newValue) || ""; } catch (x) {} applySkin(v); }
+  if (e.key === "radio.lang") { try { const v = JSON.parse(e.newValue); if (T[v]) { lang = v; applyLang(); } } catch (x) {} }
+});
+
+if (!AC) status(t("audioOff"), true);
+applyLang(); showPos();
+applySkin(currentSkin());
+</script>
+</body>
+</html>

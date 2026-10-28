@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Значок микшера в стиле иконки радио: неоморфный фон, три фейдера пульта -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f5"/>
+      <stop offset="1" stop-color="#d9dee6"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a8fd8"/>
+      <stop offset="1" stop-color="#2b6cb0"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="4" dy="6" stdDeviation="6" flood-color="#1e4e85" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <!-- Пазы фейдеров -->
+  <g stroke="#b8bec7" stroke-width="22" stroke-linecap="round">
+    <path d="M136 92v328M256 92v328M376 92v328"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity=".8" stroke-width="6" stroke-linecap="round">
+    <path d="M128 92v328M248 92v328M368 92v328"/>
+  </g>
+  <!-- Ручки фейдеров -->
+  <g fill="url(#blue)" filter="url(#soft)">
+    <rect x="86" y="272" width="100" height="62" rx="18"/>
+    <rect x="206" y="138" width="100" height="62" rx="18"/>
+    <rect x="326" y="212" width="100" height="62" rx="18"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity=".75" stroke-width="6" stroke-linecap="round">
+    <path d="M108 303h56M228 169h56M348 243h56"/>
+  </g>
+</svg>

@@ -344,6 +344,18 @@
   .save:active:not(:disabled) { box-shadow: var(--in-sm); transform: scale(.95); }
   .save:disabled { color: var(--muted); opacity: .5; cursor: default; }
   .save.done { box-shadow: var(--in-sm); }
+  /* Атмосфера: кнопка в плеере и панель с ползунками фоновых звуков над плеером */
+  .save.amb-btn { font-size: 19px; }
+  .save.amb-btn.on { box-shadow: var(--in-sm); }
+  .amb { position: fixed; right: 16px; bottom: calc(100px + env(safe-area-inset-bottom)); z-index: 20; width: 330px; max-width: calc(100vw - 32px);
+    padding: 16px; border-radius: 18px; background: var(--bg); color: var(--text); border: 1px solid var(--edge); box-shadow: var(--out); }
+  .amb-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .amb-head b { flex: 1; font-size: 16px; }
+  .amb-head button { padding: 6px 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--edge); box-shadow: var(--out-sm); }
+  .amb-head button:active { box-shadow: var(--in-sm); }
+  .amb-row { display: grid; grid-template-columns: 26px 78px 1fr; align-items: center; gap: 8px; padding: 7px 0; font-size: 14px; }
+  .amb-row .vol { width: 100%; }
+  .amb-note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
   .notes-bar { grid-column: 1 / -1; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; color: var(--on-page-muted, var(--muted)); font-size: 13px; }
   .note .info .name { white-space: normal; }
   .note .acts { display: flex; gap: 8px; flex: none; }
@@ -367,6 +379,7 @@
   .skin-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
     color: var(--muted); border: 1px solid var(--edge); box-shadow: var(--out-sm); }
   .skin-btn svg { width: 16px; height: 16px; }
+  a.skin-btn { text-decoration: none; background: var(--bg); border: 1px solid var(--edge); }
   .skin-btn[aria-expanded="true"] { box-shadow: var(--in-sm); color: var(--accent); }
   .skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin: 16px 0 6px; padding: 14px;
     border-radius: 18px; background: var(--bg); color: var(--text); border: 1px solid var(--edge); box-shadow: var(--out); }
@@ -673,7 +686,7 @@
     .top h1 { font-size: 30px; letter-spacing: .05em; margin-right: auto; }
     .lang { padding: 5px 9px; }
     .skin-btn { padding: 5px 10px; }
-    .skin-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .skin-btn span:not(.ico) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .skin-btn svg { width: 18px; height: 18px; }
     .lang, .skin-btn { min-height: 34px; }
     .sub { margin: 6px 0 12px; font-size: 13px; }
@@ -715,6 +728,8 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7h2.1A4.3 4.3 0 0 0 21 11c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="11" r="1.4" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.4" fill="currentColor"/><circle cx="15" cy="7.6" r="1.4" fill="currentColor"/></svg>
       <span data-i18n="theme">Тема</span>
     </button>
+    <a class="skin-btn" href="mixer.html" data-i18n-title="mixer" title="Микшер"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3v18M12 3v18M18 3v18"/></g><g fill="currentColor"><rect x="3" y="13" width="6" height="4" rx="1.5"/><rect x="9" y="6" width="6" height="4" rx="1.5"/><rect x="15" y="10" width="6" height="4" rx="1.5"/></g></svg>
+      <span data-i18n="mixer">Микшер</span></a>
   </div>
   <div class="skins" id="skins" hidden role="group" aria-label="Тема оформления" data-i18n-label="themeLabel"></div>
   <p class="sub"><span data-i18n="sub">Тысячи станций со всего мира.</span>
@@ -770,12 +785,23 @@
       <div class="meta" id="nowMeta">&nbsp;</div>
     </div>
     <button class="save" id="save" type="button" disabled title="Записать трек в записную книжку" aria-label="Записать трек" data-i18n-title="saveTitle">♥</button>
+    <button class="save amb-btn" id="ambBtn" type="button" aria-expanded="false" aria-controls="amb" title="Атмосфера: дождь, море, камин" data-i18n-title="ambTitle">🌧</button>
     <div class="volbox">
       <button class="vbtn" id="volDown" title="Тише" aria-label="Тише" data-i18n-title="quieter">−</button>
       <input class="vol" id="vol" type="range" min="0" max="1" step="0.01" value="0.8" title="Громкость" aria-label="Громкость" data-i18n-title="volume">
       <button class="vbtn" id="volUp" title="Громче" aria-label="Громче" data-i18n-title="louder">+</button>
     </div>
   </div>
+</div>
+
+<div class="amb" id="amb" hidden role="group" aria-label="Атмосфера" data-i18n-label="amb">
+  <div class="amb-head">
+    <b data-i18n="amb">Атмосфера</b>
+    <button type="button" id="ambPause">Пауза</button>
+    <button type="button" id="ambOff" data-i18n="ambOff">Выключить</button>
+  </div>
+  <div id="ambRows"></div>
+  <p class="amb-note" data-i18n="ambNote">Звуки рождаются прямо в браузере и звучат поверх любой станции.</p>
 </div>
 
 <audio id="audio" preload="none"></audio>
@@ -1258,7 +1284,9 @@ const T = {
     notesEmpty: "Пока пусто. Когда играет песня, нажмите ♥ в плеере внизу — она запишется сюда.",
     notesBar: "Книжка хранится в радио на этом устройстве — на телефоне и компьютере она своя.",
     playSt: "Включить станцию", yt: "Найти на YouTube", ya: "Найти в Яндекс Музыке", del: "Удалить из книжки",
-    theme: "Тема", themeLabel: "Тема оформления", roAir: "● В ЭФИРЕ", roPause: "○ ПАУЗА", roCodec: "КОДЕК", roBitrate: "БИТРЕЙТ", roCountry: "СТРАНА"
+    theme: "Тема", mixer: "Микшер", amb: "Атмосфера", ambTitle: "Атмосфера: дождь, море, камин", ambPause: "Пауза", ambPlay: "Включить", ambOff: "Выключить",
+    ambNote: "Звуки рождаются прямо в браузере и звучат поверх любой станции.",
+    amb_rain: "Дождь", amb_wind: "Ветер", amb_sea: "Море", amb_fire: "Камин", amb_night: "Сверчки", themeLabel: "Тема оформления", roAir: "● В ЭФИРЕ", roPause: "○ ПАУЗА", roCodec: "КОДЕК", roBitrate: "БИТРЕЙТ", roCountry: "СТРАНА"
   },
   en: {
     brand: "RADIO", sub: "Thousands of stations from all over the world.", install: "⤓ Install as an app",
@@ -1289,7 +1317,9 @@ const T = {
     notesEmpty: "Nothing here yet. When a song is playing, tap ♥ in the player below to save it here.",
     notesBar: "The notebook is stored in the radio on this device — your phone and computer each have their own.",
     playSt: "Play the station", yt: "Search on YouTube", ya: "Search on Yandex Music", del: "Remove from the notebook",
-    theme: "Theme", themeLabel: "Color theme", roAir: "● ON AIR", roPause: "○ PAUSED", roCodec: "CODEC", roBitrate: "BITRATE", roCountry: "COUNTRY"
+    theme: "Theme", mixer: "Mixer", amb: "Ambience", ambTitle: "Ambience: rain, sea, fireplace", ambPause: "Pause", ambPlay: "Play", ambOff: "Turn off",
+    ambNote: "The sounds are generated right in your browser and play over any station.",
+    amb_rain: "Rain", amb_wind: "Wind", amb_sea: "Sea", amb_fire: "Fireplace", amb_night: "Crickets", themeLabel: "Color theme", roAir: "● ON AIR", roPause: "○ PAUSED", roCodec: "CODEC", roBitrate: "BITRATE", roCountry: "COUNTRY"
   },
   fr: {
     brand: "RADIO", sub: "Des milliers de stations du monde entier.", install: "⤓ Installer comme application",
@@ -1320,7 +1350,9 @@ const T = {
     notesEmpty: "Rien pour l’instant. Pendant une chanson, touchez ♥ dans le lecteur en bas pour l’enregistrer ici.",
     notesBar: "Le carnet est stocké dans la radio sur cet appareil — téléphone et ordinateur ont chacun le leur.",
     playSt: "Écouter la station", yt: "Chercher sur YouTube", ya: "Chercher sur Yandex Music", del: "Retirer du carnet",
-    theme: "Thème", themeLabel: "Thème de couleur", roAir: "● À L’ANTENNE", roPause: "○ EN PAUSE", roCodec: "CODEC", roBitrate: "DÉBIT", roCountry: "PAYS"
+    theme: "Thème", mixer: "Mixeur", amb: "Ambiance", ambTitle: "Ambiance : pluie, mer, cheminée", ambPause: "Pause", ambPlay: "Lecture", ambOff: "Éteindre",
+    ambNote: "Les sons sont créés directement dans le navigateur et se superposent à n’importe quelle station.",
+    amb_rain: "Pluie", amb_wind: "Vent", amb_sea: "Mer", amb_fire: "Cheminée", amb_night: "Grillons", themeLabel: "Thème de couleur", roAir: "● À L’ANTENNE", roPause: "○ EN PAUSE", roCodec: "CODEC", roBitrate: "DÉBIT", roCountry: "PAYS"
   }
 };
 let lang = (location.search.match(/lang=(ru|en|fr)/) || [])[1] || store("radio.lang") ||
@@ -2192,12 +2224,164 @@ function tickReadout() {
 setInterval(tickReadout, 1000);
 applySkin(currentSkin(), false);
 
+// Атмосфера: дождь, ветер, море, камин и сверчки поверх станции. Звуки синтезируются в браузере (Web Audio):
+// файлов и лицензий нет, интернет не нужен. Громкость — через GainNode, потому что на айфоне audio.volume не меняется.
+// Звучит, пока хоть один ползунок не на нуле; уровни запоминаются, но включаются только по нажатию (запрет автоплея)
+const AMB = [["rain", "🌧"], ["wind", "🌬"], ["sea", "🌊"], ["fire", "🔥"], ["night", "🦗"]];
+let ambCtx = null, ambPaused = false;
+const ambGain = {}, ambLvl = store("radio.amb") || {};
+// Буфер, который зацикливается без щелчка: хвост плавно перетекает в начало
+function ambBuf(c, sec, fill) {
+  const sr = c.sampleRate, n = Math.floor(sr * sec), k = Math.floor(sr * 0.2), raw = new Float32Array(n + k);
+  fill(raw, sr);
+  const b = c.createBuffer(1, n, sr), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = i < k ? raw[i] * (i / k) + raw[n + i] * (1 - i / k) : raw[i];
+  return b;
+}
+function pinkFill(d) {
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < d.length; i++) {
+    const w = Math.random() * 2 - 1;
+    b0 = 0.99765 * b0 + w * 0.099046; b1 = 0.963 * b1 + w * 0.2965164; b2 = 0.57 * b2 + w * 1.0526913;
+    d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.18;
+  }
+}
+function brownFill(d) {
+  let last = 0;
+  for (let i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+}
+// Короткие щелчки с затуханием: капли дождя, треск поленьев
+function ticksFill(perSec, maxMs, sharp) {
+  return (d, sr) => {
+    const count = Math.round(d.length / sr * perSec);
+    for (let j = 0; j < count; j++) {
+      const at = Math.floor(Math.random() * d.length), len = Math.floor(sr * maxMs / 1000 * (0.3 + Math.random()));
+      const amp = Math.pow(Math.random(), sharp);
+      for (let i = 0; i < len && at + i < d.length; i++) d[at + i] += (Math.random() * 2 - 1) * amp * Math.exp(-6 * i / len);
+    }
+  };
+}
+// Сверчки: два «голоса», каждый стрекочет тройками коротких тонов около 4–5 кГц
+function crickets(d, sr) {
+  [[4300, 1], [4850, 0.55]].forEach(v => {
+    for (let t = Math.random() * 0.5; t < d.length / sr; t += 0.55 + Math.random() * 0.4) {
+      for (let p = 0; p < 3; p++) {
+        const at = Math.floor((t + p * 0.034) * sr), len = Math.floor(0.022 * sr);
+        for (let i = 0; i < len && at + i < d.length; i++)
+          d[at + i] += Math.sin(2 * Math.PI * v[0] * i / sr) * Math.sin(Math.PI * i / len) * 0.3 * v[1];
+      }
+    }
+  });
+}
+function ambSrc(c, buf, to) { const s = c.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(to); s.start(); }
+function ambFilt(c, type, f, q, to) { const x = c.createBiquadFilter(); x.type = type; x.frequency.value = f; if (q) x.Q.value = q; x.connect(to); return x; }
+function ambLfo(c, hz, depth, param) { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = hz; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); }
+// Звук собирается при первом включении ползунка, дальше только меняется громкость
+function ambBuild(name) {
+  const c = ambCtx, g = c.createGain();
+  g.gain.value = 0;
+  g.connect(c.destination);
+  if (name === "rain") {
+    ambSrc(c, ambBuf(c, 6, pinkFill), ambFilt(c, "highpass", 450, 0, ambFilt(c, "lowpass", 7500, 0, g)));
+    ambSrc(c, ambBuf(c, 5, ticksFill(70, 4, 2)), ambFilt(c, "bandpass", 2600, 0.8, g));
+  } else if (name === "wind") {
+    const sw = c.createGain(); sw.gain.value = 0.7; sw.connect(g);
+    const bp = ambFilt(c, "bandpass", 500, 1.3, sw);
+    ambLfo(c, 0.07, 260, bp.frequency); ambLfo(c, 0.13, 0.35, sw.gain);
+    ambSrc(c, ambBuf(c, 8, pinkFill), bp);
+  } else if (name === "sea") {
+    const sw = c.createGain(); sw.gain.value = 0.55; sw.connect(g);
+    const lp = ambFilt(c, "lowpass", 900, 0, sw);
+    ambLfo(c, 0.11, 0.45, sw.gain); ambLfo(c, 0.11, 500, lp.frequency);
+    ambSrc(c, ambBuf(c, 10, brownFill), lp);
+  } else if (name === "fire") {
+    ambSrc(c, ambBuf(c, 8, brownFill), ambFilt(c, "lowpass", 380, 0, g));
+    ambSrc(c, ambBuf(c, 7, ticksFill(9, 6, 3)), ambFilt(c, "highpass", 1300, 0, g));
+  } else if (name === "night") {
+    ambSrc(c, ambBuf(c, 7, crickets), g);
+  }
+  ambGain[name] = g;
+}
+function ambOn() { return AMB.some(a => ambLvl[a[0]] > 0); }
+function ambApply() {
+  if (!ambCtx) return;
+  AMB.forEach(a => {
+    const v = ambLvl[a[0]] || 0;
+    if (v > 0 && !ambGain[a[0]]) ambBuild(a[0]);
+    if (ambGain[a[0]]) ambGain[a[0]].gain.setTargetAtTime(v * v * 0.9, ambCtx.currentTime, 0.15); // квадрат — громкость на слух равномерней
+  });
+}
+// Запуск только из нажатия: ползунок, ▶ или выбор станции
+function ambStart() {
+  if (!ambOn() || ambPaused) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  if (!ambCtx) {
+    ambCtx = new AC();
+    // Safari 16.4+: звучать и при беззвучном режиме айфона, как обычная музыка
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  }
+  if (ambCtx.state !== "running") ambCtx.resume();
+  ambApply();
+  ambMark();
+}
+function ambMark() {
+  const playing = ambOn() && !ambPaused && !!ambCtx;
+  $("ambBtn").classList.toggle("on", playing);
+  $("ambPause").textContent = t(ambPaused ? "ambPlay" : "ambPause");
+  $("ambPause").disabled = !ambOn();
+}
+function renderAmb() {
+  $("ambRows").innerHTML = AMB.map(a => '<label class="amb-row"><span aria-hidden="true">' + a[1] + '</span><span data-i18n="amb_' + a[0] + '">' +
+    t("amb_" + a[0]) + '</span><input class="vol" type="range" min="0" max="1" step="0.01" data-amb="' + a[0] + '"></label>').join("");
+  $("ambRows").querySelectorAll("input").forEach(r => {
+    const name = r.getAttribute("data-amb"), v = ambLvl[name] || 0;
+    r.value = v; r.style.setProperty("--v", (v * 100) + "%");
+    r.oninput = () => {
+      ambLvl[name] = +r.value; r.style.setProperty("--v", (r.value * 100) + "%");
+      store("radio.amb", ambLvl);
+      ambPaused = false;
+      ambStart(); ambApply(); ambMark();
+    };
+  });
+}
+renderAmb();
+ambMark();
+$("ambBtn").onclick = () => {
+  const open = $("amb").hidden;
+  $("amb").hidden = !open;
+  $("ambBtn").setAttribute("aria-expanded", open);
+};
+$("ambPause").onclick = () => {
+  ambPaused = !ambPaused;
+  if (ambCtx) { if (ambPaused) ambCtx.suspend(); else ambStart(); }
+  else ambStart();
+  ambMark();
+};
+$("ambOff").onclick = () => {
+  AMB.forEach(a => { ambLvl[a[0]] = 0; });
+  store("radio.amb", ambLvl);
+  ambApply(); renderAmb(); ambMark();
+  if (ambCtx) ambCtx.suspend();
+};
+// Закрыть панель нажатием мимо неё
+document.addEventListener("click", e => {
+  if (!$("amb").hidden && !$("amb").contains(e.target) && e.target !== $("ambBtn")) {
+    $("amb").hidden = true; $("ambBtn").setAttribute("aria-expanded", false);
+  }
+});
+// Сохранённая атмосфера включается вместе со станцией; после блокировки экрана — возобновляется
+$("play").addEventListener("click", ambStart);
+$("grid").addEventListener("click", ambStart);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && ambCtx && ambOn() && !ambPaused) ambCtx.resume(); });
+
 applyLang();
 // Смена языка на лету: радио продолжает играть, переводим подписи, строку плеера и открытый список
 document.querySelectorAll(".lang").forEach(b => b.onclick = () => {
   lang = b.getAttribute("data-lang");
   store("radio.lang", lang);
   applyLang();
+  ambMark();
   if (current) {
     $("nowName").textContent = current.name.trim();
     if (!audio.paused) setMarquee(); else stopMarquee(t("resume"));
