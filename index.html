@@ -251,6 +251,30 @@
     border-radius: 14px; background: var(--field, var(--bg)); color: var(--text); font: inherit; box-shadow: var(--in); }
   .search select { flex: 0 1 180px; cursor: pointer; }
   .search input::placeholder { color: var(--muted); }
+  .cpick { position: relative; flex: 0 1 200px; display: flex; }
+  .cbtn { flex: 1; min-width: 0; padding: 12px 34px 12px 16px; border-radius: 14px; text-align: left; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; background: var(--field, var(--bg)); box-shadow: var(--in); border: 1px solid var(--edge); position: relative; }
+  .cbtn::after { content: "▾"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .cbtn[aria-expanded="true"] { color: var(--accent); }
+  .cpanel { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; width: min(320px, calc(100vw - 32px)); max-height: min(60vh, 460px);
+    display: flex; flex-direction: column; padding: 12px; border-radius: 18px; background: var(--page, var(--bg)); color: var(--text);
+    border: 1px solid var(--edge); box-shadow: var(--out); }
+  .cpanel[hidden] { display: none; }
+  .ctools { display: flex; gap: 8px; }
+  .ctools button { flex: 1; padding: 8px 10px; border-radius: 999px; font-size: 13px; box-shadow: var(--out-sm); border: 1px solid var(--edge); }
+  .ctools button:active { box-shadow: var(--in-sm); }
+  .chint { margin: 8px 2px; font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .clist { overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  .crow { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+  #clist input { width: 18px; height: 18px; margin: 0 6px; padding: 0; flex: none; border-radius: 0; box-shadow: none; background: none;
+    border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; accent-color: var(--accent); cursor: pointer; }
+  .crow button { flex: 1; text-align: left; padding: 9px 8px; border-radius: 10px; background: transparent; }
+  .crow button:hover { color: var(--accent); }
+  .crow.cur button { color: var(--accent); font-weight: 700; }
+  .cgroup { margin: 10px 8px 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .cpanel .crow.all button { font-weight: 600; }
+  #cchips { display: contents; }
+  #brand { cursor: pointer; }
   button { font: inherit; cursor: pointer; border: 0; background: var(--bg); color: var(--text); }
   .btn, .chip, .fav, .play, .card { border: 1px solid var(--edge); }
   .btn, .chip, .fav, .play, .card { transition: box-shadow .15s, color .15s, transform .1s; }
@@ -364,6 +388,7 @@
   :root[data-skin] .card, :root[data-skin] .player, :root[data-skin] .chip, :root[data-skin] .btn, :root[data-skin] .skins,
   :root[data-skin] .search input, :root[data-skin] .search select { -webkit-backdrop-filter: var(--blur, none); backdrop-filter: var(--blur, none); }
   :root[data-skin] .search input, :root[data-skin] .search select { box-shadow: none; border: 1px solid var(--edge); }
+  :root[data-skin] .cbtn { box-shadow: none; border: 1px solid var(--edge); background: var(--field, var(--page)); }
   :root[data-skin] .search select option { background: var(--page); color: var(--on-page); }
   :root[data-skin] .logo { box-shadow: none; background: var(--logo-bg, var(--field, var(--bg))); }
   :root[data-skin] .vol { box-shadow: none; }
@@ -592,7 +617,8 @@
     .sub { margin: 6px 0 12px; font-size: 13px; }
     .search { gap: 10px; }
     .search input { flex: 1 1 100%; }
-    .search select { flex: 1 1 0; min-width: 0; }
+    .search select, .cpick { flex: 1 1 0; min-width: 0; }
+    .cpanel { width: calc(100vw - 32px); }
     .btn { flex: none; padding: 12px 18px; }
     .chips { flex-wrap: nowrap; overflow-x: auto; gap: 10px; margin: 12px -16px 0; padding: 6px 16px 12px;
       scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -617,7 +643,7 @@
     <small class="tg-only" data-i18n="tgHint">Если кнопка не сработала: нажмите ⋯ вверху справа → «Открыть в Safari» / «Открыть в браузере».</small>
   </div>
   <div class="top">
-    <h1 data-i18n="brand">РАДИО</h1>
+    <h1 data-i18n="brand" id="brand">РАДИО</h1>
     <div class="langs" role="group" aria-label="Язык / Language">
       <button class="lang" type="button" data-lang="ru">RU</button>
       <button class="lang" type="button" data-lang="en">EN</button>
@@ -632,7 +658,18 @@
     <button class="install" id="install" type="button" hidden data-i18n="install">⤓ Установить как приложение</button></p>
   <form class="search" id="form">
     <input id="q" type="search" placeholder="Станция или жанр…" data-i18n-ph="q" autocomplete="off">
-    <select id="country">
+    <div class="cpick" id="cpick">
+      <button class="cbtn" id="cbtn" type="button" aria-expanded="false" aria-controls="cpanel"></button>
+      <div class="cpanel" id="cpanel" hidden>
+        <div class="ctools">
+          <button type="button" id="cAll" data-i18n="checkAll">Отметить все</button>
+          <button type="button" id="cNone" data-i18n="uncheckAll">Снять все</button>
+        </div>
+        <p class="chint" data-i18n="cHint">Галочка — страна появится кнопкой на главной. Название — показать её станции.</p>
+        <div class="clist" id="clist"></div>
+      </div>
+    </div>
+    <select id="country" hidden>
       <option value="" data-i18n="c_all">Все страны</option>
       <option value="RU" data-i18n="c_RU">Россия</option>
       <option value="BY" data-i18n="c_BY">Беларусь</option>
@@ -937,11 +974,9 @@ const PICKS = {
 };
 
 const PRESETS = [
+  { label: "🏠 Главная", en: "🏠 Home", home: true },
   { label: "★ Избранное", en: "★ Favorites", fav: true },
   { label: "📒 Записная книжка", en: "📒 Track notebook", notes: true },
-  { label: "Россия", en: "Russia", country: "RU" },
-  { label: "Беларусь", en: "Belarus", country: "BY" },
-  { label: "Казахстан", en: "Kazakhstan", country: "KZ" },
   // «Африка» и «Индия» — вручную: самые слушаемые станции, проверены 17.10.2026 (https, нет в реестре блокировок РКН)
   { label: "Африка", en: "Africa", ids: [
     "a3c93ca9-9891-4249-a805-d622dadeed21", // Cool FM, Лагос (Нигерия)
@@ -1134,6 +1169,8 @@ const T = {
     c_all: "Все страны", c_RU: "Россия", c_BY: "Беларусь", c_KZ: "Казахстан", c_PL: "Польша",
     c_latam: "Латинская Америка", c_baltic: "Прибалтика", c_US: "США", c_GB: "Великобритания",
     c_DE: "Германия", c_FR: "Франция", c_IT: "Италия", europe: "Европа",
+    checkAll: "Отметить все", uncheckAll: "Снять все", cMain: "Основные",
+    cHint: "Галочка — страна появится кнопкой на главной. Название — показать её станции.",
     fileTitle: "Радио работает только в браузере", tgTitle: "Откройте радио в браузере",
     fileText: "Вы открыли файл. Нажмите кнопку — радио откроется в Safari или Chrome.",
     tgText: "В Telegram звук пропадёт, как только вы свернёте приложение.",
@@ -1162,6 +1199,8 @@ const T = {
     c_all: "All countries", c_RU: "Russia", c_BY: "Belarus", c_KZ: "Kazakhstan", c_PL: "Poland",
     c_latam: "Latin America", c_baltic: "Baltic states", c_US: "USA", c_GB: "United Kingdom",
     c_DE: "Germany", c_FR: "France", c_IT: "Italy", europe: "Europe",
+    checkAll: "Check all", uncheckAll: "Uncheck all", cMain: "Main",
+    cHint: "Tick a country to add its button to the main screen. Tap the name to show its stations.",
     fileTitle: "The radio only works in a browser", tgTitle: "Open the radio in your browser",
     fileText: "You opened a file. Tap the button and the radio will open in Safari or Chrome.",
     tgText: "In Telegram the sound stops as soon as you minimize the app.",
@@ -1200,7 +1239,8 @@ function applyLang() {
   document.querySelectorAll("[data-i18n-title]").forEach(el => {
     el.title = t(el.getAttribute("data-i18n-title")); el.setAttribute("aria-label", el.title); });
   document.querySelectorAll(".lang").forEach(b => b.classList.toggle("on", b.getAttribute("data-lang") === lang));
-  document.querySelectorAll(".chip").forEach((c, i) => { if (PRESETS[i]) c.textContent = presetLabel(PRESETS[i]); });
+  document.querySelectorAll(".chip[data-p]").forEach((c, i) => { if (PRESETS[i]) c.textContent = presetLabel(PRESETS[i]); });
+  renderCountries();
   // Страны Европы: группа в выпадающем списке, названия на языке сайта
   const eu = $("europe");
   eu.label = t("europe");
@@ -1629,7 +1669,7 @@ function noteTime(t) {
   const d = new Date(t);
   return pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
 }
-function notesOpen() { const i = PRESETS.findIndex(p => p.notes); const c = document.querySelectorAll(".chip")[i]; return c && c.classList.contains("on"); }
+function notesOpen() { const i = PRESETS.findIndex(p => p.notes); const c = document.querySelectorAll(".chip[data-p]")[i]; return c && c.classList.contains("on"); }
 $("save").onclick = () => {
   if (!current) return;
   let song = nowSong;
@@ -1716,7 +1756,8 @@ $("volUp").onclick = () => setVol(audio.volume + 0.1);
 $("httpsOnly").onchange = e => { store("radio.httpsOnly", e.target.checked); render(lastListRaw); };
 
 function setChip(i) {
-  document.querySelectorAll(".chip").forEach((c, j) => c.classList.toggle("on", j === i));
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
+  if (i >= 0) document.querySelectorAll(".chip[data-p]")[i].classList.add("on");
   setStyleBg(i >= 0 && PRESETS[i].bg);
 }
 
@@ -1737,10 +1778,13 @@ function setStyleBg(name) {
 PRESETS.forEach((p, i) => {
   const b = document.createElement("button");
   b.className = "chip";
+  b.setAttribute("data-p", i);
   b.textContent = presetLabel(p);
   b.onclick = () => {
+    if (p.home) { goHome(); return; }
+    markAway();
     setChip(i);
-    $("q").value = ""; $("country").value = p.country || "";
+    $("q").value = ""; setCountry(p.country || "");
     if (p.ids) {
       loadIds(p.ids);
     } else if (p.notes) {
@@ -1753,13 +1797,130 @@ PRESETS.forEach((p, i) => {
     }
   };
   $("chips").appendChild(b);
+  // Кнопки отмеченных стран — сразу после «Избранного» и «Записной книжки»
+  if (p.notes) $("chips").appendChild(Object.assign(document.createElement("span"), { id: "cchips" }));
 });
+
+// Список стран с галочками (вместо обычного выпадающего списка). Отмеченные страны становятся
+// кнопками на главной; выбор запоминается в этом браузере. По умолчанию — Россия, Беларусь, Казахстан
+var myC = store("radio.countries") || ["RU", "BY", "KZ"];
+function countryCodes() {
+  return [].map.call($("country").options, o => o.value).filter(Boolean);
+}
+function countryName(cc) {
+  if (!cc) return t("c_all");
+  const e = EUROPE.find(c => c[0] === cc);
+  return e ? (lang === "en" ? e[2] : e[1]) : t("c_" + cc);
+}
+function setCountry(cc) {
+  $("country").value = cc;
+  $("cbtn").textContent = countryName(cc);
+  document.querySelectorAll(".crow").forEach(r => r.classList.toggle("cur", r.dataset.cc === cc));
+}
+// Главная: кнопка «🏠 Главная» или заголовок РАДИО — популярные станции России, как при запуске.
+// Подборки, страны и поиск добавляют шаг в историю, поэтому «Назад» на телефоне тоже возвращает на главную
+function goHome() {
+  if (history.state && history.state.away) history.replaceState(null, "");
+  toggleCountries(false);
+  setChip(PRESETS.findIndex(p => p.home));
+  $("q").value = "";
+  setCountry("RU");
+  loadCountry("RU");
+  window.scrollTo(0, 0);
+}
+function markAway() {
+  if (!(history.state && history.state.away)) history.pushState({ away: 1 }, "");
+}
+window.addEventListener("popstate", e => { if (!(e.state && e.state.away)) goHome(); });
+$("brand").onclick = goHome;
+function openCountry(cc) {
+  markAway();
+  setChip(-1);
+  $("q").value = "";
+  setCountry(cc);
+  const b = document.querySelector('#cchips .chip[data-cc="' + cc + '"]');
+  if (b) b.classList.add("on");
+  if (REGIONS[cc]) loadIds(REGIONS[cc]);
+  else if (cc) loadCountry(cc);
+  else search({});
+}
+function renderCountryChips() {
+  const box = $("cchips");
+  if (!box) return;
+  const on = document.querySelector("#cchips .chip.on"), onCc = on && on.dataset.cc;
+  box.innerHTML = "";
+  countryCodes().filter(cc => myC.indexOf(cc) >= 0).forEach(cc => {
+    const b = document.createElement("button");
+    b.className = "chip" + (cc === onCc ? " on" : "");
+    b.dataset.cc = cc;
+    b.textContent = countryName(cc);
+    b.onclick = () => openCountry(cc);
+    box.appendChild(b);
+  });
+}
+function renderCountries() {
+  if (!$("clist") || !myC) return;
+  const list = $("clist"), cur = $("country").value;
+  list.innerHTML = "";
+  const row = (cc, all) => {
+    const r = document.createElement("div");
+    r.className = "crow" + (all ? " all" : "") + (cc === cur ? " cur" : "");
+    r.dataset.cc = cc;
+    if (!all) {
+      const c = document.createElement("input");
+      c.type = "checkbox";
+      c.checked = myC.indexOf(cc) >= 0;
+      c.setAttribute("aria-label", countryName(cc));
+      c.onchange = () => {
+        myC = myC.filter(x => x !== cc);
+        if (c.checked) myC.push(cc);
+        store("radio.countries", myC);
+        renderCountryChips();
+      };
+      r.appendChild(c);
+    }
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = countryName(cc);
+    b.onclick = () => { toggleCountries(false); openCountry(cc); };
+    r.appendChild(b);
+    list.appendChild(r);
+  };
+  row("", true);
+  const eu = EUROPE.map(c => c[0]);
+  const group = name => list.appendChild(Object.assign(document.createElement("div"), { className: "cgroup", textContent: name }));
+  group(t("cMain"));
+  countryCodes().filter(cc => eu.indexOf(cc) < 0).forEach(cc => row(cc));
+  group(t("europe"));
+  eu.forEach(cc => row(cc));
+  $("cbtn").textContent = countryName(cur);
+  renderCountryChips();
+}
+function toggleCountries(open) {
+  $("cpanel").hidden = !open;
+  $("cbtn").setAttribute("aria-expanded", open ? "true" : "false");
+}
+function checkAllCountries(on) {
+  myC = on ? countryCodes() : [];
+  store("radio.countries", myC);
+  renderCountries();
+}
+$("cbtn").onclick = e => { e.stopPropagation(); toggleCountries($("cpanel").hidden); };
+$("cpanel").onclick = e => e.stopPropagation();
+$("cAll").onclick = () => checkAllCountries(true);
+$("cNone").onclick = () => checkAllCountries(false);
+document.addEventListener("click", () => { if (!$("cpanel").hidden) toggleCountries(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("cpanel").hidden) { toggleCountries(false); $("cbtn").focus(); } });
+renderCountries();
 
 $("form").onsubmit = e => {
   e.preventDefault();
+  markAway();
   setChip(-1);
   const c = $("country").value;
   const q = $("q").value.trim();
+  const b = !q && document.querySelector('#cchips .chip[data-cc="' + c + '"]');
+  if (b) b.classList.add("on");
   if (REGIONS[c]) loadIds(REGIONS[c]);
   else if (c && !q) loadCountry(c);
   else search({ name: q, country: c });
@@ -1945,12 +2106,11 @@ document.querySelectorAll(".lang").forEach(b => b.onclick = () => {
     });
   } else {
     const e = $("grid").querySelector(".empty"), on = document.querySelector(".chip.on");
-    const p = on ? PRESETS[[].indexOf.call(document.querySelectorAll(".chip"), on)] : null;
+    const p = on && on.hasAttribute("data-p") ? PRESETS[+on.getAttribute("data-p")] : null;
     if (e) e.textContent = t(p && p.fav ? "favEmpty" : "nothing");
   }
 });
-setChip(PRESETS.findIndex(p => p.country === "RU" && !p.tag));
-search({ country: "RU" });
+goHome();
 </script>
 </body>
 </html>
