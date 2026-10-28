@@ -1812,10 +1812,11 @@ function countryName(cc) {
   const e = EUROPE.find(c => c[0] === cc);
   return e ? (lang === "en" ? e[2] : e[1]) : t("c_" + cc);
 }
-function setCountry(cc) {
-  $("country").value = cc;
-  $("cbtn").textContent = countryName(cc);
-  document.querySelectorAll(".crow").forEach(r => r.classList.toggle("cur", r.dataset.cc === cc));
+// В окошке стран последняя выбранная страна не запоминается (просьба Сергея, 28.10.2026):
+// станции страны грузятся сразу, а окошко и поиск снова «Все страны»
+function setCountry() {
+  $("country").value = "";
+  $("cbtn").textContent = t("c_all");
 }
 // Главная: кнопка «🏠 Главная» или заголовок РАДИО — популярные станции России, как при запуске.
 // Подборки, страны и поиск добавляют шаг в историю, поэтому «Назад» на телефоне тоже возвращает на главную
