@@ -288,6 +288,8 @@
   .opts { display: flex; gap: 16px; align-items: center; color: var(--on-page-muted, var(--muted)); font-size: 13px; margin-top: 12px; flex-wrap: wrap; }
   .opts input { accent-color: var(--accent); }
   main { max-width: 1100px; margin: 0 auto; padding: 8px 16px; }
+  .contact { margin: 28px 0 8px; text-align: center; font-size: 13px; color: var(--on-page-muted, var(--muted)); }
+  .contact a { color: var(--accent); }
   .status { color: var(--on-page-muted, var(--muted)); margin: 8px 0 14px; min-height: 1.4em; }  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
   .card { display: flex; gap: 12px; align-items: center; padding: 12px; background: var(--bg);
     border-radius: 18px; box-shadow: var(--out); cursor: pointer; min-width: 0; }
@@ -695,6 +697,7 @@
 <main>
   <div class="status" id="status" data-i18n-html="statusInit">Если станции не появляются — откройте радио в Safari или Chrome по ссылке <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a></div>
   <div class="grid" id="grid"></div>
+  <p class="contact"><span data-i18n="contact">Предложить станцию или написать нам:</span> <a href="mailto:support@radioglob.com">support@radioglob.com</a></p>
 </main>
 
 <div class="player">
@@ -1169,6 +1172,7 @@ const T = {
     c_all: "Все страны", c_RU: "Россия", c_BY: "Беларусь", c_KZ: "Казахстан", c_PL: "Польша",
     c_latam: "Латинская Америка", c_baltic: "Прибалтика", c_US: "США", c_GB: "Великобритания",
     c_DE: "Германия", c_FR: "Франция", c_IT: "Италия", europe: "Европа",
+    contact: "Предложить станцию или написать нам:",
     checkAll: "Отметить все", uncheckAll: "Снять все", cMain: "Основные",
     cHint: "Галочка — страна появится кнопкой на главной. Название — показать её станции.",
     fileTitle: "Радио работает только в браузере", tgTitle: "Откройте радио в браузере",
@@ -1199,6 +1203,7 @@ const T = {
     c_all: "All countries", c_RU: "Russia", c_BY: "Belarus", c_KZ: "Kazakhstan", c_PL: "Poland",
     c_latam: "Latin America", c_baltic: "Baltic states", c_US: "USA", c_GB: "United Kingdom",
     c_DE: "Germany", c_FR: "France", c_IT: "Italy", europe: "Europe",
+    contact: "Suggest a station or write to us:",
     checkAll: "Check all", uncheckAll: "Uncheck all", cMain: "Main",
     cHint: "Tick a country to add its button to the main screen. Tap the name to show its stations.",
     fileTitle: "The radio only works in a browser", tgTitle: "Open the radio in your browser",
@@ -1807,7 +1812,7 @@ var myC = store("radio.countries") || ["RU", "BY", "KZ"];
 function countryCodes() {
   return [].map.call($("country").options, o => o.value).filter(Boolean);
 }
-function countryName(cc) {
+function ccName(cc) {
   if (!cc) return t("c_all");
   const e = EUROPE.find(c => c[0] === cc);
   return e ? (lang === "en" ? e[2] : e[1]) : t("c_" + cc);
@@ -1854,7 +1859,7 @@ function renderCountryChips() {
     const b = document.createElement("button");
     b.className = "chip" + (cc === onCc ? " on" : "");
     b.dataset.cc = cc;
-    b.textContent = countryName(cc);
+    b.textContent = ccName(cc);
     b.onclick = () => openCountry(cc);
     box.appendChild(b);
   });
@@ -1871,7 +1876,7 @@ function renderCountries() {
       const c = document.createElement("input");
       c.type = "checkbox";
       c.checked = myC.indexOf(cc) >= 0;
-      c.setAttribute("aria-label", countryName(cc));
+      c.setAttribute("aria-label", ccName(cc));
       c.onchange = () => {
         myC = myC.filter(x => x !== cc);
         if (c.checked) myC.push(cc);
@@ -1882,7 +1887,7 @@ function renderCountries() {
     }
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = countryName(cc);
+    b.textContent = ccName(cc);
     b.onclick = () => { toggleCountries(false); openCountry(cc); };
     r.appendChild(b);
     list.appendChild(r);
@@ -1894,7 +1899,7 @@ function renderCountries() {
   countryCodes().filter(cc => eu.indexOf(cc) < 0).forEach(cc => row(cc));
   group(t("europe"));
   eu.forEach(cc => row(cc));
-  $("cbtn").textContent = countryName(cur);
+  $("cbtn").textContent = ccName(cur);
   renderCountryChips();
 }
 function toggleCountries(open) {
