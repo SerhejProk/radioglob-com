@@ -1499,6 +1499,9 @@ const UA_URL = /\/\/[^\/:]*\.ua([\/:]|$)/i;
 const BLOCKED_NAME = /свобода|свабода|svoboda|svaboda|голос америки|voice of america|\bvoa\b|дождь тв|телеканал дождь|tv rain|^эхо( ?fm)?( online)?$|^echo эхо|крым\.? ?реалии|настоящее время|азаттык|azattyk|медуза|meduza|белсат|belsat|еврорадио|euroradio|радио азатлык|slobodna evropa|europa liber[aă]|evropa e lir[eë]|info.?vojna|\brfi\b(?! ?1021)|^\W*(deutsche welle\b|dw\b)/i;
 const BLOCKED_URL = /svoboda\.org|svaboda\.org|rferl\.org|krymr\.com|currenttime\.tv|azattyq\.org|azattyk\.org|azatutyun\.am|ozodi\.org|ozodlik\.org|radiofarda\.com|idelreal\.org|kavkazr\.com|sibreal\.org|severreal\.org|rfe-ingest|rfe0\d\.akacast|radiojar\.com\/hcrb063nn3quv|voanews\.com|golos-ameriki|tvrain|echofm\.online|echo02\.online|noasrv\.caster\.fm:10034|meduza\.io|belsat\.eu|euroradio\.fm|novayagazeta\.eu|theins\.ru|[\/.]yle\.fi|[\/.]lrt\.lt|sverigesradio\.se|[\/.]trm\.md|www\.polskieradio\.pl|[\/.]15min\.lt|rus\.err\.ee|rus\.lsm\.lv|slobodnaevropa\.org|europalibera\.org|evropaelire\.org|[\/.]rfi\.fr|[\/.]dw\.com|infovojna\.|www\.marca\.com|worldreport\.today|90s-eurodance\.ru|[\/.]euronews\.com/i;
 const BLOCKED_TAG = /to people of russia|\b(erotic|erotica|explicit|nsfw|xxx|porn)\b|18\+/i;
+// 4) Всё, где упоминается Соловьёв (решение Сергея 29.10.2026): в названии, жанрах, адресе сайта или потока.
+//    «Соловей», «соловьи» и т.п. не задеваем.
+const SOLOVIEV = /соловь[её]в|solov(?:i|y|j)?[eo]v/i;
 const ADULT_NAME = /18\+|\bsex\b(?! pistols)|sexfm|erotic|эрот|трахтенберг/i;
 function allowed(s) {
   if (s.countrycode === "UA") return false;
@@ -1509,6 +1512,7 @@ function allowed(s) {
   if (langs.length && langs.every(l => UA_LANG.test(l.trim()))) return false;
   if (ADULT_NAME.test(name) && !ADULT_OK.test(name + " " + urls)) return false;
   if (BLOCKED_NAME.test(name) || BLOCKED_TAG.test(tags)) return false;
+  if (SOLOVIEV.test(name + " " + tags + " " + urls)) return false;
   return !BLOCKED_URL.test(urls);
 }
 
