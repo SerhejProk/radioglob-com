@@ -130,9 +130,76 @@
   .play:disabled { color: var(--muted); cursor: default; }
   .rew { width: 40px; height: 40px; border-radius: 50%; flex: none; color: var(--muted); box-shadow: var(--out-sm); }
   .pos { flex: 1; min-width: 0; }
-  .time { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; }
+  .pos input[type=range] { margin: 2px 0 0; }
   .mvol { width: 170px; flex: none; font-size: 12px; color: var(--muted); }
   .mvol label { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+  /* Табло времени, как на пульте */
+  .lcd { flex: none; min-width: 108px; padding: 6px 10px; border-radius: 10px; box-shadow: var(--in-sm); border: 1px solid var(--edge);
+    background: var(--field, var(--bg)); text-align: right; font: 600 20px/1.1 Consolas, "Courier New", ui-monospace, monospace;
+    color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .lcd > span { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .spec { height: 30px; }
+  /* Индикаторы уровня: зелёный до −14 дБ, жёлтый до −6, красный выше; черта — пик за последнюю секунду */
+  .meter { position: relative; display: block; overflow: hidden; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(34, 197, 94, .2) 0 70%, rgba(234, 179, 8, .22) 70% 88%, rgba(239, 68, 68, .25) 88%);
+    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 4px); mask-image: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 4px); }
+  .meter i { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, #22c55e 0 70%, #eab308 70% 88%, #ef4444 88%);
+    -webkit-clip-path: inset(0 calc(100% - var(--lv, 0) * 100%) 0 0); clip-path: inset(0 calc(100% - var(--lv, 0) * 100%) 0 0); }
+  .meter::after { content: ""; position: absolute; top: 0; bottom: 0; width: 3px; left: calc(var(--pk, 0) * 100% - 3px); background: var(--text); opacity: .75; }
+  .meter.v { width: 7px; height: 100%;
+    background: linear-gradient(0deg, rgba(34, 197, 94, .2) 0 70%, rgba(234, 179, 8, .22) 70% 88%, rgba(239, 68, 68, .25) 88%);
+    -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px); mask-image: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 4px); }
+  .meter.v i { background: linear-gradient(0deg, #22c55e 0 70%, #eab308 70% 88%, #ef4444 88%);
+    -webkit-clip-path: inset(calc(100% - var(--lv, 0) * 100%) 0 0 0); clip-path: inset(calc(100% - var(--lv, 0) * 100%) 0 0 0); }
+  .meter.v::after { left: 0; right: 0; width: auto; height: 3px; top: auto; bottom: calc(var(--pk, 0) * 100% - 3px); }
+  .trk .meter { height: 6px; margin-top: 6px; }
+  .mstr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .vu { display: flex; gap: 3px; height: 36px; }
+  .clip { padding: 1px 5px; border-radius: 4px; font: 700 9px/1.3 Consolas, "Courier New", monospace; letter-spacing: .06em; color: var(--muted); box-shadow: var(--out-sm); }
+  .clip.on { background: #ef4444; color: #ffffff; border-color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, .7); }
+  /* Цвет трека: полоска слева, номер, волна и полоса на шкале */
+  .trk { position: relative; }
+  .trk::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 0 4px 4px 0; background: var(--tc); }
+  .trk.sel { outline: 2px solid var(--tc); outline-offset: 2px; }
+  .tn { display: inline-block; min-width: 22px; padding: 0 6px; margin-right: 8px; border-radius: 6px; background: var(--tc); color: #ffffff;
+    font-size: 12px; line-height: 20px; text-align: center; }
+  @media (hover: none) { .keys { display: none; } }   /* подсказка про клавиши — только там, где есть клавиатура */
+  .ovbar { flex-wrap: wrap; }
+  .ovbar .ib, #padRec { padding: 0 12px; }
+  select.num { width: auto; }
+  /* Громкость LUFS и гониометр в плеере */
+  .loud { flex: none; min-width: 56px; text-align: center; font: 600 17px/1.1 Consolas, "Courier New", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .loud span { display: block; font-size: 10px; font-weight: 400; letter-spacing: .1em; color: var(--muted); }
+  .loud.ok b { color: #22c55e; }
+  .loud.hot b { color: var(--hot); }
+  .gonio { flex: none; width: 56px; height: 56px; border-radius: 8px; box-shadow: var(--in-sm); border: 1px solid var(--edge); background: var(--field, var(--bg)); }
+  .modal textarea.tl { width: 100%; resize: vertical; margin-bottom: 12px; font: 13px/1.5 Consolas, "Courier New", ui-monospace, monospace; }
+  /* Пэды: цветная полоска сверху, буква клавиши в углу, вспышка при нажатии */
+  #padPanel .tr-head { flex-wrap: wrap; }
+  #padVol { width: 110px; }
+  .pads { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+  .padw { position: relative; }
+  .pad { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; width: 100%; min-height: 78px;
+    padding: 8px 8px 9px 10px; border-radius: 14px; overflow: hidden; text-align: left; font-size: 12px; font-weight: 600; line-height: 1.2;
+    color: var(--text); box-shadow: var(--out); touch-action: manipulation; }
+  #padPanel h2 { margin: 0; font-size: 18px; }
+  .pad::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--pc); }
+  .pad::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--pc); opacity: 0; transition: opacity .35s; pointer-events: none; }
+  .pad.hit::after { opacity: .35; transition: none; }
+  .pad.hit { box-shadow: var(--in); }
+  .pad kbd { position: absolute; top: 12px; left: 10px; font: 600 11px Consolas, "Courier New", monospace; color: var(--muted); }
+  .pad em { font-style: normal; font-size: 10px; font-weight: 400; color: var(--muted); }
+  .pl { position: absolute; right: 6px; width: 22px; height: 22px; padding: 0; border-radius: 7px; font-size: 12px; line-height: 1; color: var(--muted); box-shadow: var(--out-sm); }
+  .pl { top: 11px; }
+  .pl.rs { right: 32px; }
+  :root[data-skin] .pad, :root[data-skin] .pl, :root[data-skin] .gonio { box-shadow: none; border: 1px solid var(--edge); background: var(--field, var(--bg)); }
+  :root[data-skin] .pad.hit { box-shadow: var(--in); }
+  :root[data-skin="pop"] .pad, :root[data-skin="pop"] .gonio { border: 3px solid #111111; }
+  :root[data-skin="cyber"] .pad { border-radius: 0; }
+  @media (max-width: 640px) {
+    .pads { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .gonio { display: none; }   /* на телефоне не помещается — хватает индикаторов */
+  }
   .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 10; display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; }
   .modal[hidden] { display: none; }
   .modal .panel { width: 100%; max-width: 520px; max-height: calc(100vh - 120px); overflow: auto; margin: 0; }
@@ -148,6 +215,10 @@
     .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; }
     .mvol { display: none; }  /* на телефоне громкость — кнопками телефона, как у радио */
     .play { width: 50px; height: 50px; }
+    body { padding-bottom: 180px; }
+    .player-in { flex-wrap: wrap; gap: 10px 12px; }
+    .lcd { flex: 1; }
+    .pos { order: 5; flex-basis: 100%; }   /* спектр и перемотка — отдельной строкой во всю ширину */
   }
   /* ===== Темы оформления =====
      Без data-skin — стандартный неоморфизм (день/ночь по часам, фоны под жанры).
@@ -452,6 +523,10 @@
   :root[data-skin="cyber"] .panel, :root[data-skin="cyber"] .num, :root[data-skin="cyber"] .tool, :root[data-skin="cyber"] .ib { border-radius: 0; }
   :root[data-skin="studio"] .panel, :root[data-skin="studio"] .tool, :root[data-skin="studio"] .ib { border-radius: 6px; }
 </style>
+<!-- Статистика посещений GoatCounter: без cookies и без личных данных, отчёты на radioglob.goatcounter.com.
+     К адресу страницы добавляется домен, чтобы в одном отчёте различать radioglob.ru, radioglob.com и github.io -->
+<script>window.goatcounter = { path: function (p) { return location.host + p; } };</script>
+<script data-goatcounter="https://radioglob.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 <div class="waves" aria-hidden="true"></div>
@@ -474,8 +549,11 @@
       <span data-i18n="overlap">наложение, с</span> <input class="num" id="overlap" type="number" min="0" max="30" step="0.5" value="3"></span>
     <button class="btn" id="mixesBtn" type="button" data-i18n="mixes">Мои миксы</button>
     <button class="btn" id="wavBtn" type="button" data-i18n="download">⤓ Скачать WAV</button>
+    <span class="chainbox"><button class="btn" id="loudBtn" type="button" data-i18n="loud" data-i18n-title="loudT">📏 Выровнять громкость</button>
+      <select class="num" id="target" aria-label="LUFS"><option value="-14" data-i18n="tg14"></option><option value="-16" data-i18n="tg16"></option><option value="-9" data-i18n="tg9"></option></select></span>
   </div>
   <input id="file" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm" multiple hidden>
+  <input id="padFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.oga,.opus,.flac,.webm" hidden>
 </header>
 
 <main>
@@ -488,8 +566,21 @@
     <div class="tools-grid" id="toolsGrid"></div>
   </div>
   <div class="panel card" id="ovPanel" hidden>
+    <div class="tr-head ovbar">
+      <button class="ib" id="splitBtn" type="button" data-i18n="split" data-i18n-title="splitT">✂ Разрезать</button>
+      <button class="ib" id="snapBtn" type="button" data-i18n="snap" data-i18n-title="snapT">🧲 Прилипание</button>
+      <button class="ib" id="tlBtn" type="button" data-i18n="tracklist">📋 Треклист</button>
+    </div>
     <canvas class="ov" id="ov" height="80"></canvas>
     <p class="hint" data-i18n="ovHint">Это ваш микс. Перетащите полосу, чтобы сдвинуть трек; нажмите на пустое место — перейти к этому моменту.</p>
+    <p class="hint keys" data-i18n="keys"></p>
+  </div>
+  <div class="panel card" id="padPanel">
+    <div class="tr-head"><h2 class="tr-name" data-i18n="pads">Пэды</h2>
+      <label class="chainbox"><span data-i18n="padVol">Громкость</span><input type="range" id="padVol" min="0" max="150" value="100"></label>
+      <button class="ib" id="padRec" type="button" data-i18n="padRec">● Запись в микс</button></div>
+    <div class="pads" id="pads"></div>
+    <p class="hint" data-i18n="padsHint"></p>
   </div>
   <div id="tracks"></div>
 </main>
@@ -499,14 +590,22 @@
   <div class="player-in">
     <button class="rew" id="rew" type="button" aria-label="В начало" data-i18n-title="toStart">⏮</button>
     <button class="play" id="play" type="button" aria-label="Играть" disabled>▶</button>
+    <div class="lcd"><b id="tNow">00:00.0</b><span>/ <span id="tLen">00:00.0</span></span></div>
     <div class="pos">
+      <canvas class="spec" id="spec" height="30" aria-hidden="true"></canvas>
       <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Позиция">
-      <div class="time"><span id="tNow">0:00</span><span id="tLen">0:00</span></div>
     </div>
+    <div class="loud" data-i18n-title="lufsT"><b id="lufs">—</b><span>LUFS</span></div>
+    <div class="mstr">
+      <div class="vu" aria-hidden="true"><span class="meter v" id="vuL"><i></i></span><span class="meter v" id="vuR"><i></i></span></div>
+      <button class="clip" id="clip" type="button" data-i18n-title="clipT">CLIP</button>
+    </div>
+    <canvas class="gonio" id="gonio" data-i18n-title="goniT"></canvas>
     <div class="mvol">
       <span data-i18n="master">Общая громкость</span>
       <input type="range" id="mvol" min="0" max="150" value="100">
       <label><input type="checkbox" id="comp"> <span data-i18n="comp">Ровная громкость</span></label>
+      <label><input type="checkbox" id="limit" checked> <span data-i18n="limit">Лимитер (без перегруза)</span></label>
     </div>
   </div>
 </div>
@@ -519,6 +618,16 @@
       <button class="btn" id="saveBtn" type="button" data-i18n="save">Сохранить</button></div>
     <div id="mixList"></div>
     <p class="hint" data-i18n="mixesHint">Миксы хранятся только в этом браузере на этом устройстве.</p>
+  </div>
+</div>
+<div class="modal" id="tlModal" hidden>
+  <div class="panel card" role="dialog" aria-modal="true" aria-labelledby="tlTitle">
+    <div class="tr-head"><h2 class="tr-name" id="tlTitle" data-i18n="tracklist">📋 Треклист</h2>
+      <button class="ib" id="tlClose" type="button" data-i18n-title="close">✕</button></div>
+    <textarea class="num tl" id="tlText" rows="10" readonly></textarea>
+    <div class="saverow"><button class="btn" id="tlCopy" type="button" data-i18n="copy">Копировать</button>
+      <button class="btn" id="tlSave" type="button" data-i18n="saveTxt">Скачать .txt</button></div>
+    <p class="hint" data-i18n="tlHint"></p>
   </div>
 </div>
 
@@ -559,12 +668,28 @@ const T = {
     home: "🏠 Главная", confirmHome: "Текущий микс не сохранён и будет закрыт. Вернуться на главную микшера?",
     roAir: "● ИГРАЕТ", roPause: "○ ПАУЗА", roTracks: "ТРЕКОВ", roLen: "ДЛИНА", toolsTitle: "Инструменты микшера", demo: "▶ Попробовать на демо-треках", demoMaking: "Создаю демо-треки…", demoBeat: "Демо — ритм", demoChords: "Демо — аккорды",
     demoReady: "Демо-треки готовы: нажмите ▶ внизу и крутите регуляторы.",
+    keys: "Клавиши: Пробел — играть / пауза · ← → — на 5 с (с Shift — на 1 с) · Home / End — в начало / в конец · 1–9 — выбрать трек · M — без звука · S — соло · C — разрезать · Q…I — пэды",
+    clipT: "Перегруз: микс громче 0 дБ и искажается — убавьте громкость. Нажмите, чтобы сбросить",
+    split: "✂ Разрезать", splitT: "Разрезать трек в точке курсора (клавиша C)", snap: "🧲 Прилипание", snapT: "Полоса трека прилипает к началу, к курсору и к краям других треков",
+    tracklist: "📋 Треклист", tlHint: "Вставьте в описание YouTube, SoundCloud или Telegram — таймкоды станут кликабельными.", copy: "Копировать", copied: "Треклист скопирован.", saveTxt: "Скачать .txt",
+    needCut: "Поставьте курсор внутрь трека, который надо разрезать.", cut: "Трек «{n}» разрезан на две части.",
+    loud: "📏 Выровнять громкость", loudT: "Измерить громкость микса (LUFS) и подогнать общую громкость к выбранной цели",
+    tg14: "−14 LUFS · YouTube, Spotify", tg16: "−16 LUFS · подкаст, Apple", tg9: "−9 LUFS · клуб, громко",
+    measuring: "Измеряю громкость микса…", loudDone: "Было {a} LUFS, пик {p} дБ. Общая громкость {v}% — теперь около {t} LUFS.",
+    loudMax: " Даже на максимуме тише цели — прибавьте громкость треков.", limit: "Лимитер (без перегруза)",
+    lufsT: "Громкость за последние 3 секунды (LUFS, как у YouTube и Spotify). Для стримингов цель около −14",
+    goniT: "Стереокартина: вертикальная черта — моно, широкое облако — широкое стерео. Полоска снизу — корреляция: если уходит влево (красная), звук в противофазе",
+    pads: "Пэды", padRec: "● Запись в микс", padVol: "Громкость", padLoad: "Загрузить свой звук", padReset: "Вернуть стандартный звук",
+    padsHint: "Нажмите пэд или клавишу Q W E R T Y U I — звук сыграет сразу. С «● Запись в микс» он ещё и встанет в микс на место курсора. ⤒ — свой звук.",
+    padNames: ["Позывной", "Эйрхорн", "Сирена", "Лазер", "Взлёт", "Удар", "Аплодис­менты", "Скретч"], padLoaded: "Пэд «{n}»: звук загружен.",
     tools: [["✂️", "Обрезка", "маркеры на волне трека: убрать лишнее в начале и конце"], ["⏱", "Начало в миксе", "когда трек вступает; полосу можно тянуть на шкале"],
       ["🔊", "Громкость и баланс", "уровень трека и левый/правый канал"], ["📈", "Нарастание и затухание", "плавное начало и конец, переходы между треками"],
       ["🎛", "Эквалайзер", "низкие, средние и высокие частоты"], ["⏩", "Скорость", "быстрее или медленнее (тон меняется вместе с ней)"],
       ["🔁", "Эхо", "повторы звука"], ["🏛", "Зал", "объём, как в большом помещении"],
       ["🎧", "Соло и «Без звука»", "S — слушать один трек, M — заглушить"], ["🔗", "Выстроить подряд", "треки один за другим с наложением"],
-      ["🗜", "Ровная громкость", "компрессор на весь микс"], ["💾", "Скачать WAV и «Мои миксы»", "готовый файл и сохранение проекта"]]
+      ["🗜", "Ровная громкость", "компрессор на весь микс"], ["💾", "Скачать WAV и «Мои миксы»", "готовый файл и сохранение проекта"],
+      ["🔪", "Разрезка и прилипание", "разрезать трек по курсору, полосы встают встык"], ["📏", "Громкость LUFS", "лимитер и подгонка под YouTube, подкаст, клуб"],
+      ["🥁", "Пэды", "позывной, сирена, эйрхорн и свои звуки — по нажатию"], ["📋", "Треклист", "таймкоды для описания микса"]]
   },
   en: {
     brand: "MIXER", back: "← Radio", sub: "Build your own mix: load tracks, trim them, add effects and play.",
@@ -588,12 +713,28 @@ const T = {
     home: "🏠 Home", confirmHome: "The current mix isn’t saved and will be closed. Go back to the mixer home?",
     roAir: "● PLAYING", roPause: "○ PAUSED", roTracks: "TRACKS", roLen: "LENGTH", toolsTitle: "Mixer tools", demo: "▶ Try with demo tracks", demoMaking: "Creating demo tracks…", demoBeat: "Demo — beat", demoChords: "Demo — chords",
     demoReady: "Demo tracks are ready: press ▶ below and play with the controls.",
+    keys: "Keys: Space — play / pause · ← → — 5 s (with Shift — 1 s) · Home / End — to start / to end · 1–9 — select track · M — mute · S — solo · C — split · Q…I — pads",
+    clipT: "Clipping: the mix is above 0 dB and distorts — turn it down. Click to reset",
+    split: "✂ Split", splitT: "Split the track at the cursor (key C)", snap: "🧲 Snap", snapT: "Track bars snap to the start, the cursor and the edges of other tracks",
+    tracklist: "📋 Tracklist", tlHint: "Paste into a YouTube, SoundCloud or Telegram description — the timecodes become clickable.", copy: "Copy", copied: "Tracklist copied.", saveTxt: "Download .txt",
+    needCut: "Put the cursor inside the track you want to split.", cut: "Track “{n}” split in two.",
+    loud: "📏 Match loudness", loudT: "Measure the mix loudness (LUFS) and set the master volume to the chosen target",
+    tg14: "−14 LUFS · YouTube, Spotify", tg16: "−16 LUFS · podcast, Apple", tg9: "−9 LUFS · club, loud",
+    measuring: "Measuring the mix loudness…", loudDone: "Was {a} LUFS, peak {p} dB. Master volume {v}% — now about {t} LUFS.",
+    loudMax: " Still below the target at maximum — turn the tracks up.", limit: "Limiter (no clipping)",
+    lufsT: "Loudness over the last 3 seconds (LUFS, as used by YouTube and Spotify). Streaming target is about −14",
+    goniT: "Stereo image: a vertical line is mono, a wide cloud is wide stereo. The bar below is correlation: if it goes left (red), the sound is out of phase",
+    pads: "Pads", padRec: "● Record into mix", padVol: "Volume", padLoad: "Load your own sound", padReset: "Restore the standard sound",
+    padsHint: "Tap a pad or press Q W E R T Y U I — it plays at once. With “● Record into mix” it is also placed into the mix at the cursor. ⤒ — your own sound.",
+    padNames: ["Station ID", "Air horn", "Siren", "Laser", "Riser", "Impact", "Applause", "Scratch"], padLoaded: "Pad “{n}”: sound loaded.",
     tools: [["✂️", "Trim", "markers on the waveform cut the start and end"], ["⏱", "Start in mix", "when the track comes in; drag its bar on the timeline"],
       ["🔊", "Volume and balance", "track level and left/right"], ["📈", "Fade in and out", "smooth starts, ends and transitions"],
       ["🎛", "Equalizer", "bass, mids and treble"], ["⏩", "Speed", "faster or slower (pitch changes too)"],
       ["🔁", "Echo", "repeats of the sound"], ["🏛", "Hall", "space, like a big room"],
       ["🎧", "Solo and Mute", "S — hear one track, M — silence it"], ["🔗", "Line up in order", "tracks one after another with overlap"],
-      ["🗜", "Even loudness", "compressor on the whole mix"], ["💾", "Download WAV and My mixes", "finished file and saved project"]]
+      ["🗜", "Even loudness", "compressor on the whole mix"], ["💾", "Download WAV and My mixes", "finished file and saved project"],
+      ["🔪", "Split and snap", "cut a track at the cursor, bars line up edge to edge"], ["📏", "LUFS loudness", "limiter and matching for YouTube, podcast, club"],
+      ["🥁", "Pads", "station ID, siren, air horn and your own sounds — on tap"], ["📋", "Tracklist", "timecodes for the mix description"]]
   },
   fr: {
     brand: "MIXEUR", back: "← Radio", sub: "Créez votre mix : chargez des morceaux, coupez-les, ajoutez des effets et écoutez.",
@@ -617,12 +758,28 @@ const T = {
     home: "🏠 Accueil", confirmHome: "Le mix actuel n’est pas enregistré et sera fermé. Revenir à l’accueil du mixeur ?",
     roAir: "● EN LECTURE", roPause: "○ PAUSE", roTracks: "MORCEAUX", roLen: "DURÉE", toolsTitle: "Outils du mixeur", demo: "▶ Essayer avec des morceaux démo", demoMaking: "Création des morceaux démo…", demoBeat: "Démo — rythme", demoChords: "Démo — accords",
     demoReady: "Les morceaux démo sont prêts : appuyez sur ▶ en bas et jouez avec les réglages.",
+    keys: "Touches : Espace — lecture / pause · ← → — 5 s (avec Maj — 1 s) · Début / Fin — au début / à la fin · 1–9 — choisir un morceau · M — muet · S — solo · C — couper · Q…I — pads",
+    clipT: "Saturation : le mix dépasse 0 dB et distord — baissez le volume. Cliquez pour réinitialiser",
+    split: "✂ Couper", splitT: "Couper le morceau au curseur (touche C)", snap: "🧲 Aimant", snapT: "Les barres s’aimantent au début, au curseur et aux bords des autres morceaux",
+    tracklist: "📋 Liste des titres", tlHint: "Collez-la dans la description YouTube, SoundCloud ou Telegram — les minutages deviennent cliquables.", copy: "Copier", copied: "Liste copiée.", saveTxt: "Télécharger .txt",
+    needCut: "Placez le curseur dans le morceau à couper.", cut: "Morceau « {n} » coupé en deux.",
+    loud: "📏 Ajuster le volume", loudT: "Mesurer le volume du mix (LUFS) et régler le volume général sur la cible choisie",
+    tg14: "−14 LUFS · YouTube, Spotify", tg16: "−16 LUFS · podcast, Apple", tg9: "−9 LUFS · club, fort",
+    measuring: "Mesure du volume du mix…", loudDone: "Avant : {a} LUFS, crête {p} dB. Volume général {v} % — maintenant environ {t} LUFS.",
+    loudMax: " Toujours sous la cible au maximum — montez le volume des morceaux.", limit: "Limiteur (sans saturation)",
+    lufsT: "Volume des 3 dernières secondes (LUFS, comme YouTube et Spotify). Cible streaming : environ −14",
+    goniT: "Image stéréo : un trait vertical = mono, un nuage large = stéréo large. La barre du bas est la corrélation : à gauche (rouge), le son est en opposition de phase",
+    pads: "Pads", padRec: "● Enregistrer dans le mix", padVol: "Volume", padLoad: "Charger votre son", padReset: "Remettre le son standard",
+    padsHint: "Touchez un pad ou les touches Q W E R T Y U I — le son part tout de suite. Avec « ● Enregistrer dans le mix », il est aussi placé au curseur. ⤒ — votre son.",
+    padNames: ["Indicatif", "Corne", "Sirène", "Laser", "Montée", "Impact", "Applaudisse­ments", "Scratch"], padLoaded: "Pad « {n} » : son chargé.",
     tools: [["✂️", "Coupe", "repères sur l’onde pour couper le début et la fin"], ["⏱", "Début dans le mix", "quand le morceau entre ; faites glisser sa barre"],
       ["🔊", "Volume et balance", "niveau du morceau et gauche/droite"], ["📈", "Fondus", "débuts, fins et transitions en douceur"],
       ["🎛", "Égaliseur", "graves, médiums et aigus"], ["⏩", "Vitesse", "plus vite ou plus lent (le ton change aussi)"],
       ["🔁", "Écho", "répétitions du son"], ["🏛", "Salle", "de l’espace, comme une grande pièce"],
       ["🎧", "Solo et Muet", "S — écouter un seul morceau, M — le couper"], ["🔗", "Enchaîner", "morceaux à la suite avec fondu"],
-      ["🗜", "Volume régulier", "compresseur sur tout le mix"], ["💾", "WAV et Mes mix", "fichier final et projet enregistré"]]
+      ["🗜", "Volume régulier", "compresseur sur tout le mix"], ["💾", "WAV et Mes mix", "fichier final et projet enregistré"],
+      ["🔪", "Couper et aimanter", "couper au curseur, barres bord à bord"], ["📏", "Volume LUFS", "limiteur et réglage pour YouTube, podcast, club"],
+      ["🥁", "Pads", "indicatif, sirène, corne et vos sons — d’une touche"], ["📋", "Liste des titres", "minutages pour la description du mix"]]
   }
 };
 let lang = (location.search.match(/lang=(ru|en|fr)/) || [])[1] || store("radio.lang") ||
@@ -637,7 +794,7 @@ function applyLang() {
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.getAttribute("data-i18n-title")); el.setAttribute("aria-label", el.title); });
   document.querySelectorAll(".lang").forEach(b => b.classList.toggle("on", b.getAttribute("data-lang") === lang));
   $("toolsGrid").innerHTML = t("tools").map(x => `<div class="tool"><i aria-hidden="true">${x[0]}</i><div><b>${x[1]}</b><span>${x[2]}</span></div></div>`).join("");
-  renderTracks();
+  renderTracks(); renderPads();
 }
 document.querySelectorAll(".lang").forEach(b => b.onclick = () => { lang = b.getAttribute("data-lang"); store("radio.lang", lang); applyLang(); });
 
@@ -646,6 +803,12 @@ function fmt(s) {
   s = Math.round(Math.max(0, s || 0) * 10) / 10;
   const m = Math.floor(s / 60), r = +(s - m * 60).toFixed(1);
   return m + ":" + (r < 10 ? "0" : "") + r;
+}
+// Табло: 01:23.4
+function tc(s) {
+  s = Math.round(Math.max(0, s || 0) * 10) / 10;
+  const m = Math.floor(s / 60), x = s - m * 60;
+  return (m < 10 ? "0" : "") + m + ":" + (x < 10 ? "0" : "") + x.toFixed(1);
 }
 function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
@@ -675,14 +838,17 @@ function readFile(f) {
 }
 
 // ---------- Микс ----------
-let tracks = [];   // { id, name, data (ArrayBuffer), buf (AudioBuffer), peaks, start, trimIn, trimOut, vol, pan, fi, fo, lo, mid, hi, rate, echo, rev, mute, solo }
+let tracks = [];   // { id, name, data (ArrayBuffer), buf (AudioBuffer), peaks, color, start, trimIn, trimOut, vol, pan, fi, fo, lo, mid, hi, rate, echo, rev, mute, solo }
 let nextId = 1;
+let sel = 0;       // выбранный трек (для клавиш M и S)
+// Цвета треков: читаются на светлом и тёмном фоне любой темы
+const TC = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 let mixName = "";
 let dirty = false;
-const master = { vol: 1, comp: false };
+const master = { vol: 1, comp: false, limit: true };
 
 function newTrack(name, data, buf) {
-  return { id: nextId++, name: name, data: data, buf: buf, peaks: peaks(buf),
+  return { id: nextId++, name: name, data: data, buf: buf, peaks: peaks(buf), color: tracks.length % TC.length,
     start: mixLen(), trimIn: 0, trimOut: buf.duration, vol: 1, pan: 0, fi: 0, fo: 0,
     lo: 0, mid: 0, hi: 0, rate: 1, echo: 0, rev: 0, mute: false, solo: false };
 }
@@ -720,14 +886,44 @@ function impulse(c) {
   }
   return (c._ir = ir);
 }
-function masterChain(c) {
-  const g = c.createGain(); g.gain.value = master.vol;
+// Общий выход: громкость → «ровная громкость» → лимитер. raw — без громкости и лимитера (для замера LUFS)
+function masterChain(c, raw) {
+  const g = c.createGain(); g.gain.value = raw ? 1 : master.vol;
+  let last = g;
   if (master.comp) {
     const k = c.createDynamicsCompressor();
     k.threshold.value = -20; k.knee.value = 12; k.ratio.value = 4; k.attack.value = .005; k.release.value = .25;
-    g.connect(k); k.connect(c.destination);
-  } else g.connect(c.destination);
+    last.connect(k); last = k;
+  }
+  if (master.limit && !raw) {
+    // Лимитер: компрессор прижимает всё громче −3 дБ, а «потолок» мягко срезает остаток выше −2 дБ —
+    // встроенный компрессор браузера сам по себе пропускает пики до +0.5 дБ
+    const l = c.createDynamicsCompressor(), ws = c.createWaveShaper();
+    l.threshold.value = -3; l.knee.value = 0; l.ratio.value = 20; l.attack.value = .001; l.release.value = .1;
+    ws.curve = ceiling(c); ws.oversample = "2x";
+    last.connect(l); l.connect(ws); last = ws;
+  }
+  last.connect(c.destination);
+  g.out = last;   // последний узел перед колонками, к нему цепляем индикаторы
   return g;
+}
+// Кривая «потолка»: до 0.8 (−2 дБ) звук не меняется, выше плавно подходит к 0.966 (−0.3 дБ) и дальше не растёт
+function ceiling(c) {
+  if (c._ceil) return c._ceil;
+  const n = 4096, a = new Float32Array(n), knee = .8, top = .966;
+  for (let i = 0; i < n; i++) {
+    const x = i / (n - 1) * 2 - 1, v = Math.abs(x);
+    a[i] = Math.sign(x) * (v < knee ? v : knee + (top - knee) * Math.tanh((v - knee) / (top - knee)));
+  }
+  return (c._ceil = a);
+}
+// K-фильтр из стандарта громкости EBU R128 / ITU BS.1770: подъём верхов и срез низа — как слышит ухо
+function kFilters(c) {
+  const hs = c.createBiquadFilter(), hp = c.createBiquadFilter();
+  hs.type = "highshelf"; hs.frequency.value = 1681.97; hs.gain.value = 4;
+  hp.type = "highpass"; hp.frequency.value = 38.13; hp.Q.value = .5;
+  hs.connect(hp);
+  return { input: hs, output: hp };
 }
 // Цепочка одного трека: источник → нарастание/затухание → эквалайзер → громкость → баланс → микс (+ эхо и зал параллельно)
 // when — время контекста, когда зазвучит; off — с какой секунды трека (в секундах микса) начинаем
@@ -773,13 +969,15 @@ function pos() { return playing ? fromPos + (ctx.currentTime - startedAt) : from
 function startAt(p) {
   const c = audio();
   masterNode = masterChain(c);
+  const m = tapMaster(c, masterNode);
   const now = c.currentTime + .05;
   live = {};
   tracks.forEach(tr => {
     const s = tr.start, d = tlen(tr);
     if (d <= 0 || p >= s + d) return;
     const off = Math.max(0, p - s);
-    live[tr.id] = chain(c, tr, masterNode, now + Math.max(0, s - p), off);
+    const n = live[tr.id] = chain(c, tr, masterNode, now + Math.max(0, s - p), off);
+    n.an = c.createAnalyser(); n.an.fftSize = 512; n.pan.connect(n.an); n.an.connect(m.z); n.all.push(n.an);
   });
   startedAt = now; fromPos = p; playing = true;
   $("play").textContent = "⏸"; $("play").classList.add("on");
@@ -790,7 +988,7 @@ function startAt(p) {
 function stopNodes() {
   Object.keys(live).forEach(k => live[k].all.forEach(n => { try { if (n.stop) n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} }));
   live = {};
-  if (masterNode) { try { masterNode.disconnect(); } catch (e) {} masterNode = null; }
+  if (masterNode) { try { masterNode.disconnect(); masterNode.out.disconnect(); } catch (e) {} masterNode = null; }
 }
 function pause() {
   if (!playing) return;
@@ -798,7 +996,7 @@ function pause() {
   $("play").textContent = "▶"; $("play").classList.remove("on");
   mediaSession(false);
   document.documentElement.classList.remove("on-air");
-  cancelAnimationFrame(raf); showPos();
+  cancelAnimationFrame(raf); showPos(); resetMeters();
 }
 function seek(p) {
   p = Math.max(0, Math.min(p, mixLen()));
@@ -817,18 +1015,18 @@ function applyLive(tr) {
 function tick() {
   if (!playing) return;
   if (pos() >= mixLen() + .1) { pause(); fromPos = 0; showPos(); return; }
-  showPos();
+  showPos(); drawMeters();
   raf = requestAnimationFrame(tick);
 }
 function showPos() {
   const p = pos(), L = mixLen();
-  $("tNow").textContent = fmt(p); $("tLen").textContent = fmt(L);
+  $("tNow").textContent = tc(p); $("tLen").textContent = tc(L);
   if (!seeking) $("seek").value = L ? Math.round(p / L * 1000) : 0;
   $("play").disabled = !tracks.length;
   drawOverview();
 }
 let seeking = false;
-$("seek").oninput = () => { seeking = true; $("tNow").textContent = fmt($("seek").value / 1000 * mixLen()); };
+$("seek").oninput = () => { seeking = true; $("tNow").textContent = tc($("seek").value / 1000 * mixLen()); };
 $("seek").onchange = () => { seeking = false; seek($("seek").value / 1000 * mixLen()); };
 $("play").onclick = () => {
   if (playing) return pause();
@@ -839,6 +1037,8 @@ $("play").onclick = () => {
 $("rew").onclick = () => seek(0);
 $("mvol").oninput = () => { master.vol = $("mvol").value / 100; if (masterNode) masterNode.gain.value = master.vol; store("mixer.vol", master.vol); };
 $("comp").onchange = () => { master.comp = $("comp").checked; restart(); };
+$("limit").onchange = () => { master.limit = $("limit").checked; store("mixer.limit", master.limit); restart(); };
+(function () { const v = store("mixer.limit"); if (typeof v === "boolean") { master.limit = v; $("limit").checked = v; } })();
 (function () { const v = store("mixer.vol"); if (typeof v === "number") { master.vol = v; $("mvol").value = Math.round(v * 100); } })();
 
 // Экран блокировки: название микса и кнопки ▶/⏸
@@ -851,6 +1051,129 @@ function mediaSession(on) {
     navigator.mediaSession.setActionHandler("play", () => { if (!playing) $("play").click(); });
     navigator.mediaSession.setActionHandler("pause", pause);
   } catch (e) {}
+}
+
+// ---------- Индикаторы уровня, лампа перегруза и спектр ----------
+// Анализаторы общего выхода создаём один раз на контекст. Все анализаторы идут в «немой» узел к колонкам —
+// иначе старые браузеры их не обсчитывают
+let mtr = null, meterEls = {}, meterState = {}, clipT = 0, lufsRing = [];
+function meterNodes(c) {
+  if (mtr && mtr.c === c) return mtr;
+  const sp = c.createChannelSplitter(2), L = c.createAnalyser(), R = c.createAnalyser(), S = c.createAnalyser(), z = c.createGain();
+  L.fftSize = R.fftSize = 1024; S.fftSize = 2048; S.smoothingTimeConstant = .75;
+  z.gain.value = 0; z.connect(c.destination);
+  sp.connect(L, 0); sp.connect(R, 1); L.connect(z); R.connect(z); S.connect(z);
+  // Для LUFS: K-фильтр → по каналам
+  const k = kFilters(c), ks = c.createChannelSplitter(2), KL = c.createAnalyser(), KR = c.createAnalyser();
+  KL.fftSize = KR.fftSize = 2048;
+  k.output.connect(ks); ks.connect(KL, 0); ks.connect(KR, 1); KL.connect(z); KR.connect(z);
+  return (mtr = { c: c, sp: sp, L: L, R: R, S: S, z: z, k: k.input, KL: KL, KR: KR, F: new Uint8Array(S.frequencyBinCount) });
+}
+// Подключить индикаторы к общему выходу
+function tapMaster(c, node) {
+  const m = meterNodes(c);
+  node.out.connect(m.sp); node.out.connect(m.S); node.out.connect(m.k);
+  return m;
+}
+const WAVE = new Float32Array(2048), GL = new Float32Array(1024), GR = new Float32Array(1024);
+function timeData(an, a) {
+  if (an.getFloatTimeDomainData) { an.getFloatTimeDomainData(a); return a; }
+  const b = new Uint8Array(a.length); an.getByteTimeDomainData(b);   // старый Safari
+  for (let i = 0; i < a.length; i++) a[i] = (b[i] - 128) / 128;
+  return a;
+}
+function peakOf(an, a) {
+  if (!an) return 0;
+  a = a || timeData(an, WAVE.subarray(0, an.fftSize));
+  let m = 0;
+  for (let i = 0; i < a.length; i++) { const v = Math.abs(a[i]); if (v > m) m = v; }
+  return m;
+}
+function meanSq(an) {
+  const a = timeData(an, WAVE.subarray(0, an.fftSize));
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * a[i];
+  return s / a.length;
+}
+function lufsOf(p) { return p > 0 ? -0.691 + 10 * Math.log10(p) : -Infinity; }
+function num(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(1); }
+// Пик → доля шкалы: от −48 до 0 дБ
+function lvl(p) { return p > 0 ? Math.max(0, Math.min(1, (20 * Math.log10(p) + 48) / 48)) : 0; }
+function setMeter(el, key, p, now) {
+  const s = meterState[key] || (meterState[key] = { v: 0, pk: 0, t: 0 }), x = lvl(p);
+  s.v = Math.max(x, s.v - .025);   // столбик опадает плавно
+  if (x >= s.pk) { s.pk = x; s.t = now; } else if (now - s.t > 1000) s.pk = Math.max(s.v, s.pk - .01);
+  el.style.setProperty("--lv", s.v.toFixed(3)); el.style.setProperty("--pk", s.pk.toFixed(3));
+}
+function drawMeters() {
+  const now = performance.now();
+  tracks.forEach(tr => { const el = meterEls[tr.id], n = live[tr.id]; if (el) setMeter(el, tr.id, n ? peakOf(n.an) : 0, now); });
+  if (mtr) {
+    const a = timeData(mtr.L, GL), b = timeData(mtr.R, GR), l = peakOf(mtr.L, a), r = peakOf(mtr.R, b);
+    setMeter($("vuL"), "L", l, now); setMeter($("vuR"), "R", r, now);
+    if (Math.max(l, r) >= .999) { clipT = now; $("clip").classList.add("on"); }
+    else if (clipT && now - clipT > 2000) { clipT = 0; $("clip").classList.remove("on"); }
+    drawGonio(a, b);
+    // LUFS за последние 3 секунды (short-term)
+    lufsRing.push([now, meanSq(mtr.KL) + meanSq(mtr.KR)]);
+    while (lufsRing.length && now - lufsRing[0][0] > 3000) lufsRing.shift();
+    let s = 0; lufsRing.forEach(x => { s += x[1]; });
+    const v = lufsOf(s / lufsRing.length), tg = +$("target").value, el = document.querySelector(".loud");
+    $("lufs").textContent = v > -70 ? num(v) : "−∞";
+    el.classList.toggle("ok", v > -70 && Math.abs(v - tg) <= 1.5);
+    el.classList.toggle("hot", v > tg + 3);
+  }
+  drawSpec(true);
+}
+function resetMeters() {
+  meterState = {}; lufsRing = [];
+  document.querySelectorAll(".meter").forEach(el => { el.style.setProperty("--lv", 0); el.style.setProperty("--pk", 0); });
+  $("lufs").textContent = "—"; document.querySelector(".loud").className = "loud";
+  drawSpec(false); drawGonio(null, null);
+}
+// Гониометр: точки (L, R), повёрнутые на 45° — моно стоит вертикальной чертой. Снизу полоска корреляции −1…+1
+function drawGonio(a, b) {
+  const cv = $("gonio"); if (!cv.clientWidth) return;
+  const r = fit(cv), g = cv.getContext("2d"), W = cv.width, H = cv.height, cx = W / 2, cy = (H - 6 * r) / 2, s = W * .34;
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = css("--muted"); g.globalAlpha = .3; g.lineWidth = r;
+  g.beginPath(); g.moveTo(cx, cy - s * 1.2); g.lineTo(cx, cy + s * 1.2);
+  g.moveTo(cx - s, cy - s); g.lineTo(cx + s, cy + s); g.moveTo(cx + s, cy - s); g.lineTo(cx - s, cy + s); g.stroke();
+  if (!a) { g.globalAlpha = 1; return; }
+  let lr = 0, ll = 0, rr = 0;
+  g.fillStyle = css("--accent"); g.globalAlpha = .55;
+  for (let i = 0; i < a.length; i++) {
+    const l = a[i], q = b[i];
+    lr += l * q; ll += l * l; rr += q * q;
+    g.fillRect(cx + (q - l) * .7071 * s - r / 2, cy - (l + q) * .7071 * s - r / 2, r, r);
+  }
+  const corr = ll && rr ? lr / Math.sqrt(ll * rr) : 0, y = H - 4 * r;
+  g.globalAlpha = .25; g.fillStyle = css("--muted"); g.fillRect(4 * r, y, W - 8 * r, 2 * r);
+  g.globalAlpha = 1; g.fillStyle = corr >= 0 ? "#22c55e" : "#ef4444";
+  const w = corr * (W / 2 - 4 * r); g.fillRect(Math.min(cx, cx + w), y - r, Math.abs(w) || r, 4 * r);
+}
+$("clip").onclick = () => { clipT = 0; $("clip").classList.remove("on"); };
+// Спектр общего выхода: полосы по логарифмической шкале от 40 Гц до 16 кГц; на паузе — ровная линия
+function drawSpec(on) {
+  const cv = $("spec"); if (!cv.clientWidth) return;
+  const r = fit(cv), g = cv.getContext("2d"), W = cv.width, H = cv.height;
+  const n = Math.max(16, Math.min(72, Math.floor(W / (7 * r)))), bw = W / n, d = on && mtr ? mtr.F : null;
+  if (d) mtr.S.getByteFrequencyData(d);
+  const ny = (mtr ? mtr.c.sampleRate : 44100) / 2, bins = d ? d.length : 1;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = css("--accent");
+  for (let i = 0; i < n; i++) {
+    let v = 0;
+    if (d) {
+      const b0 = Math.floor(40 * Math.pow(400, i / n) / ny * bins), b1 = Math.max(b0 + 1, Math.ceil(40 * Math.pow(400, (i + 1) / n) / ny * bins));
+      for (let b = b0; b < b1 && b < bins; b++) if (d[b] > v) v = d[b];
+      v /= 255;
+    }
+    const h = Math.max(2 * r, v * H);
+    g.globalAlpha = d ? .35 + .65 * v : .25;
+    g.fillRect(i * bw + r, H - h, Math.max(1, bw - 2 * r), h);
+  }
+  g.globalAlpha = 1;
 }
 
 // ---------- Загрузка файлов ----------
@@ -985,9 +1308,9 @@ function renderTracks() {
   document.querySelector("h1").classList.toggle("home", tracks.length > 0);
   $("ovPanel").hidden = !tracks.length;
   $("tracks").innerHTML = tracks.map((tr, i) => `
-    <div class="panel card" data-id="${tr.id}">
+    <div class="panel card trk${tr.id === sel ? " sel" : ""}" data-id="${tr.id}" style="--tc:${TC[tr.color % TC.length]}">
       <div class="tr-head">
-        <div class="tr-name" title="${esc(tr.name)}">${i + 1}. ${esc(tr.name)}<small>${fmt(tlen(tr))}</small></div>
+        <div class="tr-name" title="${esc(tr.name)}"><span class="tn">${i + 1}</span>${esc(tr.name)}<small>${fmt(tlen(tr))}</small></div>
         <button class="ib chip${tr.mute ? " on" : ""}" type="button" data-a="mute" title="${t("mute")}">M</button>
         <button class="ib chip${tr.solo ? " on" : ""}" type="button" data-a="solo" title="${t("solo")}">S</button>
         <button class="ib chip" type="button" data-a="up" title="${t("up")}"${i ? "" : " disabled"}>▲</button>
@@ -995,6 +1318,7 @@ function renderTracks() {
         <button class="ib chip del" type="button" data-a="del" title="${t("del")}">✕</button>
       </div>
       <canvas class="wf" height="90"></canvas>
+      <span class="meter" aria-hidden="true"><i></i></span>
       ${i ? "" : `<p class="hint">${t("wfHint")}</p>`}
       <div class="grid">
         <label class="ctl"><span class="lbl"><span>${t("start")}</span></span>
@@ -1008,8 +1332,10 @@ function renderTracks() {
         <div class="grid">${range(tr, "lo")}${range(tr, "mid")}${range(tr, "hi")}${range(tr, "rate")}${range(tr, "echo")}${range(tr, "rev")}</div>
       </details>
     </div>`).join("");
+  meterEls = {};
   $("tracks").querySelectorAll(".panel").forEach(p => {
     const tr = byId(+p.getAttribute("data-id"));
+    meterEls[tr.id] = p.querySelector(".meter");
     wfBind(p.querySelector(".wf"), tr);
     p.querySelector("details").ontoggle = e => { tr.open = e.target.open; };
   });
@@ -1017,6 +1343,14 @@ function renderTracks() {
   paintArt();   // тема «Обложка»: цвета фона под треки
 }
 function byId(id) { for (const tr of tracks) if (tr.id === id) return tr; return null; }
+// Выбранный трек — рамка его цвета; клавиши M и S действуют на него
+function select(tr, scroll) {
+  sel = tr ? tr.id : 0;
+  $("tracks").querySelectorAll(".panel").forEach(p => p.classList.toggle("sel", +p.getAttribute("data-id") === sel));
+  drawOverview();
+  if (tr && scroll && card(tr)) card(tr).scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+$("tracks").addEventListener("pointerdown", e => { const p = e.target.closest(".panel"); if (p && +p.getAttribute("data-id") !== sel) select(byId(+p.getAttribute("data-id"))); });
 function card(tr) { return $("tracks").querySelector('.panel[data-id="' + tr.id + '"]'); }
 function setNum(tr, k) { const el = card(tr) && card(tr).querySelector('[data-k="' + k + '"]'); if (el) el.value = tr[k].toFixed(1); }
 function setLen(tr) { const el = card(tr) && card(tr).querySelector(".tr-name small"); if (el) el.textContent = fmt(tlen(tr)); }
@@ -1064,15 +1398,18 @@ function drawWave(cv, tr) {
   if (!cv.clientWidth) return;
   const r = fit(cv), g = cv.getContext("2d"), W = cv.width, H = cv.height, P = tr.peaks, N = P.length / 2, D = tr.buf.duration;
   g.clearRect(0, 0, W, H);
-  g.fillStyle = css("--wave");
-  if (document.documentElement.hasAttribute("data-skin")) { g.fillStyle = css("--accent"); g.globalAlpha = .6; }
+  // Позиция воспроизведения внутри трека: проигранная часть волны ярче
+  const p = pos(), inside = p >= tr.start && p <= tr.start + tlen(tr) && (playing || p > 0);
+  const px = inside ? (tr.trimIn + (p - tr.start) * tr.rate) / D * W : p > tr.start ? W : -1;
+  const a = tr.trimIn / D * W, b = tr.trimOut / D * W;
+  g.fillStyle = TC[tr.color % TC.length];
   for (let x = 0; x < W; x++) {
     const i0 = Math.floor(x / W * N), i1 = Math.max(i0 + 1, Math.floor((x + 1) / W * N));
     let mn = 0, mx = 0;
     for (let i = i0; i < i1 && i < N; i++) { if (P[i * 2] < mn) mn = P[i * 2]; if (P[i * 2 + 1] > mx) mx = P[i * 2 + 1]; }
+    g.globalAlpha = x >= a && x < px ? 1 : .55;
     g.fillRect(x, H / 2 - mx * H * .46, 1, Math.max(1, (mx - mn) * H * .46));
   }
-  const a = tr.trimIn / D * W, b = tr.trimOut / D * W;
   g.globalAlpha = 1;
   g.fillStyle = css("--cut"); g.fillRect(0, 0, a, H); g.fillRect(b, 0, W - b, H);
   g.fillStyle = css("--accent");
@@ -1080,12 +1417,7 @@ function drawWave(cv, tr) {
     g.fillRect(x - r, 0, 2 * r, H);
     g.fillRect(k ? x - 10 * r : x, H / 2 - 14 * r, 10 * r, 28 * r);   // «ручки» внутрь выделения
   });
-  // Позиция воспроизведения внутри трека
-  const p = pos();
-  if (p >= tr.start && p <= tr.start + tlen(tr) && (playing || p > 0)) {
-    const x = (tr.trimIn + (p - tr.start) * tr.rate) / D * W;
-    g.fillStyle = css("--hot"); g.fillRect(x - r / 2, 0, r, H);
-  }
+  if (inside) { g.fillStyle = css("--hot"); g.fillRect(px - r, 0, 2 * r, H); }
 }
 function wfBind(cv, tr) {
   let drag = null;
@@ -1113,6 +1445,7 @@ function wfBind(cv, tr) {
 
 // ---------- Общая шкала микса ----------
 const ROW = 22;
+let snapOn = store("mixer.snap") !== false, snapAt = null;
 function ovGeom() { const L = Math.max(mixLen() * 1.05, 10); return { L: L }; }
 function drawOverview() {
   const cv = $("ov"); if (!tracks.length || !cv.clientWidth) return;
@@ -1128,14 +1461,20 @@ function drawOverview() {
   tracks.forEach((tr, i) => {
     const y = (6 + i * ROW) * r, h = 16 * r, x0 = tr.start * k, x1 = (tr.start + tlen(tr)) * k;
     const fi = Math.min(tr.fi, tlen(tr) / 2) * k, fo = Math.min(tr.fo, tlen(tr) / 2) * k;
-    g.globalAlpha = audible(tr) ? .85 : .3;
-    g.fillStyle = css("--accent");
+    g.globalAlpha = audible(tr) ? .9 : .3;
+    g.fillStyle = TC[tr.color % TC.length];
     g.beginPath(); g.moveTo(x0, y + h); g.lineTo(x0 + fi, y); g.lineTo(x1 - fo, y); g.lineTo(x1, y + h); g.closePath(); g.fill();
+    if (tr.id === sel) { g.globalAlpha = 1; g.strokeStyle = css("--text"); g.lineWidth = 1.5 * r; g.stroke(); }
     g.globalAlpha = 1;
-    g.fillStyle = css("--text"); g.font = (11 * r) + "px system-ui, sans-serif";
+    g.font = (11 * r) + "px system-ui, sans-serif";
     g.save(); g.beginPath(); g.rect(x0, y, Math.max(0, x1 - x0), h); g.clip();
-    g.fillStyle = css("--on-accent") || css("--bg"); g.fillText((i + 1) + ". " + tr.name, x0 + fi / 2 + 4 * r, y + 12 * r); g.restore();
+    g.shadowColor = "rgba(0, 0, 0, .45)"; g.shadowBlur = 2 * r;
+    g.fillStyle = "#ffffff"; g.fillText((i + 1) + ". " + tr.name, x0 + fi / 2 + 4 * r, y + 12 * r); g.restore();
   });
+  if (snapAt !== null) {   // направляющая прилипания
+    g.strokeStyle = css("--accent"); g.lineWidth = 1.5 * r; g.setLineDash([4 * r, 3 * r]);
+    g.beginPath(); g.moveTo(snapAt * k, 0); g.lineTo(snapAt * k, H); g.stroke(); g.setLineDash([]);
+  }
   g.fillStyle = css("--hot"); g.fillRect(pos() * k - r, 0, 2 * r, H);
   // Красная черта и на волнах треков
   $("tracks").querySelectorAll(".panel").forEach(p => { const tr = byId(+p.getAttribute("data-id")); if (tr) drawWave(p.querySelector(".wf"), tr); });
@@ -1151,43 +1490,299 @@ function drawOverview() {
   });
   cv.addEventListener("pointermove", e => {
     if (!drag || !drag.tr) return;
-    const v = Math.max(0, Math.round((sec(e) - drag.dx) * 10) / 10);
+    let v = Math.max(0, Math.round((sec(e) - drag.dx) * 10) / 10);
+    snapAt = null;
+    if (snapOn) {   // начало или конец полосы ближе 8 пикселей к точке — ставим ровно на неё
+      const tr = drag.tr, len = tlen(tr), th = 8 / cv.getBoundingClientRect().width * ovGeom().L;
+      const pts = [0, pos()];
+      tracks.forEach(x => { if (x !== tr) pts.push(x.start, x.start + tlen(x)); });
+      let best = th;
+      pts.forEach(p => {
+        if (Math.abs(v - p) < best) { best = Math.abs(v - p); v = p; snapAt = p; }
+        else if (Math.abs(v + len - p) < best && p - len >= 0) { best = Math.abs(v + len - p); v = p - len; snapAt = p; }
+      });
+    }
     if (v !== drag.tr.start) { drag.tr.start = v; moved = true; setNum(drag.tr, "start"); drawOverview(); showPos(); }
   });
   cv.addEventListener("pointerup", e => {
     if (!drag) return;
     if (drag.tr && moved) { dirty = true; restart(); }
     else seek(sec(e));
-    drag = null;
+    drag = null; snapAt = null; drawOverview();
   });
 })();
 window.redrawAll = function () { drawOverview(); };
-window.addEventListener("resize", () => redrawAll());
+window.addEventListener("resize", () => { redrawAll(); if (!playing) { drawSpec(false); drawGonio(null, null); } });
+
+// ---------- Разрезать трек в точке курсора: выбранный, а если курсор не в нём — первый трек под курсором ----------
+function splitAt() {
+  const p = pos(), inside = tr => p > tr.start + .05 && p < tr.start + tlen(tr) - .05;
+  let tr = byId(sel);
+  if (!tr || !inside(tr)) tr = tracks.filter(inside)[0];
+  if (!tr) return status(t("needCut"), true);
+  const cut = tr.trimIn + (p - tr.start) * tr.rate;
+  const b = Object.assign({}, tr, { id: nextId++, trimIn: cut, start: p, fi: 0, open: false });   // вторая часть: тот же звук и цвет
+  tr.trimOut = cut; tr.fo = 0;
+  tracks.splice(tracks.indexOf(tr) + 1, 0, b);
+  sel = b.id; dirty = true;
+  renderTracks(); restart(); showPos(); status(t("cut", tr.name));
+}
+$("splitBtn").onclick = splitAt;
+function showSnap() { $("snapBtn").classList.toggle("on", snapOn); }
+$("snapBtn").onclick = () => { snapOn = !snapOn; store("mixer.snap", snapOn); showSnap(); };
+showSnap();
+
+// ---------- Треклист: «00:00 Название» по началу треков; вторые части разрезанного трека (тот же звук встык) не повторяем ----------
+function tracklist() {
+  const hrs = mixLen() >= 3600, two = n => (n < 10 ? "0" : "") + n;
+  const tcode = s => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return (hrs ? h + ":" + two(m) : two(m)) + ":" + two(s % 60); };
+  const list = tracks.filter(tr => audible(tr) && tlen(tr) > 0);
+  const rows = list.filter(tr => !list.some(x => x !== tr && x.buf === tr.buf && Math.abs(x.start + tlen(x) - tr.start) < .05))
+    .sort((a, b) => a.start - b.start)
+    .map(tr => tcode(tr.start) + " " + tr.name);
+  return (mixName ? mixName + "\n\n" : "") + rows.join("\n");
+}
+$("tlBtn").onclick = () => { $("tlText").value = tracklist(); $("tlModal").hidden = false; };
+$("tlClose").onclick = () => { $("tlModal").hidden = true; };
+$("tlModal").onclick = e => { if (e.target === $("tlModal")) $("tlModal").hidden = true; };
+$("tlCopy").onclick = () => {
+  const txt = $("tlText").value, done = () => status(t("copied"));
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { $("tlText").select(); document.execCommand("copy"); done(); });
+  else { $("tlText").select(); document.execCommand("copy"); done(); }
+};
+$("tlSave").onclick = () => download(new Blob([$("tlText").value.replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), fileName(".txt"));
+
+// ---------- Пэды: 8 звуков по нажатию. Стандартные синтезируем в браузере, свои храним в IndexedDB ----------
+const PADS = [
+  { k: "id", key: "Q", c: "#3b82f6" }, { k: "horn", key: "W", c: "#ef4444" }, { k: "siren", key: "E", c: "#f59e0b" }, { k: "laser", key: "R", c: "#8b5cf6" },
+  { k: "riser", key: "T", c: "#14b8a6" }, { k: "boom", key: "Y", c: "#f97316" }, { k: "claps", key: "U", c: "#10b981" }, { k: "scratch", key: "I", c: "#ec4899" }];
+const padBuf = [], padData = [], padCustom = [];
+let padRec = false, padVol = 1, padTarget = -1, padUntil = 0, idleRaf = 0;
+function padName(i) { return padCustom[i] ? padCustom[i].name : t("padNames")[i]; }
+function renderPads() {
+  $("pads").innerHTML = PADS.map((p, i) => `<div class="padw" style="--pc:${p.c}">
+    <button class="pad" type="button" data-pad="${i}"><kbd>${p.key}</kbd>${esc(padName(i))}${padCustom[i] ? `<em>★</em>` : ""}</button>
+    <button class="pl up" type="button" data-pl="${i}" title="${t("padLoad")}">⤒</button>
+    ${padCustom[i] ? `<button class="pl rs" type="button" data-rs="${i}" title="${t("padReset")}">↺</button>` : ""}</div>`).join("");
+  $("padRec").classList.toggle("on", padRec);
+}
+// Пик звука — до 0.8, чтобы пэды звучали одинаково громко
+function normalize(b) {
+  let m = 0;
+  for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > m) m = Math.abs(d[i]); }
+  if (m > 0) for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= .8 / m; }
+  return b;
+}
+function noiseBuf(oc, sec) {
+  const b = oc.createBuffer(1, Math.ceil(sec * oc.sampleRate), oc.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+function synthPad(k) {
+  const sr = 44100, len = { id: 1.8, horn: 1.5, siren: 2.6, laser: .9, riser: 3, boom: 1.8, claps: 3, scratch: .8 }[k];
+  const oc = new OAC(2, Math.ceil(len * sr), sr), out = oc.destination;
+  function tone(type, f, t0, dur, vol, to) {
+    const o = oc.createOscillator(), g = oc.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t0);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+    o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + dur + .02);
+    return o;
+  }
+  function noise(t0, dur, type, f, q, vol, f2) {
+    const n = oc.createBufferSource(), bq = oc.createBiquadFilter(), g = oc.createGain();
+    n.buffer = noiseBuf(oc, dur); bq.type = type; bq.frequency.setValueAtTime(f, t0); bq.Q.value = q;
+    if (f2) bq.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    n.connect(bq); bq.connect(g); g.connect(out); n.start(t0);
+    return g;
+  }
+  if (k === "id") {          // позывной: колокольчики вверх по аккорду
+    [784, 988, 1175, 1568].forEach((f, i) => { tone("sine", f, i * .16, 1.3, .35); tone("sine", f * 2, i * .16, .5, .08); tone("triangle", f / 2, i * .16, .8, .12); });
+  } else if (k === "horn") { // эйрхорн: коротко-коротко-долго
+    [[0, .16], [.24, .16], [.48, .9]].forEach(x => [466, 470, 587, 699].forEach(f => {
+      const o = oc.createOscillator(), g = oc.createGain(), bp = oc.createBiquadFilter();
+      o.type = "sawtooth"; o.frequency.setValueAtTime(f * .94, x[0]); o.frequency.linearRampToValueAtTime(f, x[0] + .05);
+      bp.type = "bandpass"; bp.frequency.value = 1400; bp.Q.value = .6;
+      g.gain.setValueAtTime(0, x[0]); g.gain.linearRampToValueAtTime(.18, x[0] + .02); g.gain.setValueAtTime(.18, x[0] + x[1] - .04); g.gain.linearRampToValueAtTime(0, x[0] + x[1]);
+      o.connect(bp); bp.connect(g); g.connect(out); o.start(x[0]); o.stop(x[0] + x[1] + .02);
+    }));
+  } else if (k === "siren") {
+    const o = oc.createOscillator(), g = oc.createGain();
+    o.type = "triangle"; o.frequency.setValueAtTime(650, 0);
+    for (let i = 0; i < 4; i++) { o.frequency.linearRampToValueAtTime(1300, i * .6 + .3); o.frequency.linearRampToValueAtTime(650, i * .6 + .6); }
+    g.gain.setValueAtTime(0, 0); g.gain.linearRampToValueAtTime(.5, .05); g.gain.setValueAtTime(.5, 2.3); g.gain.linearRampToValueAtTime(0, 2.55);
+    o.connect(g); g.connect(out); o.start(0); o.stop(2.6);
+  } else if (k === "laser") {
+    [0, .28, .56].forEach(t0 => { tone("square", 2200, t0, .26, .25, 140); tone("sawtooth", 1500, t0, .22, .12, 90); });
+  } else if (k === "riser") { // взлёт: шум и тон уходят вверх и нарастают
+    const g = noise(0, 3, "bandpass", 300, 2, 0, 9000); g.gain.linearRampToValueAtTime(.9, 2.85); g.gain.linearRampToValueAtTime(0, 3);
+    const o = oc.createOscillator(), og = oc.createGain();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(110, 0); o.frequency.exponentialRampToValueAtTime(880, 2.9);
+    og.gain.setValueAtTime(0, 0); og.gain.linearRampToValueAtTime(.12, 2.85); og.gain.linearRampToValueAtTime(0, 3);
+    o.connect(og); og.connect(out); o.start(0); o.stop(3);
+  } else if (k === "boom") {  // удар: низкий «бум» и щелчок
+    tone("sine", 130, 0, 1.6, .9, 32); tone("triangle", 260, 0, .25, .3, 60);
+    const g = noise(0, .5, "lowpass", 2500, .7, .6, 200); g.gain.exponentialRampToValueAtTime(.001, .5);
+  } else if (k === "claps") { // аплодисменты: сотни коротких хлопков
+    for (let i = 0; i < 260; i++) {
+      const t0 = Math.random() * 2.6, v = .25 * Math.min(1, t0 / .3, (2.9 - t0) / 1.2);
+      const g = noise(t0, .03, "bandpass", 1200 + Math.random() * 1800, 1.2, Math.max(.01, v));
+      g.gain.exponentialRampToValueAtTime(.001, t0 + .03);
+    }
+  } else if (k === "scratch") { // скретч: звук «туда-сюда», как пластинка под рукой
+    const o = oc.createOscillator(), bp = oc.createBiquadFilter(), g = oc.createGain();
+    o.type = "sawtooth"; bp.type = "bandpass"; bp.Q.value = 3;
+    [[0, 180], [.12, 900], [.22, 160], [.36, 1100], [.46, 140], [.6, 800], [.75, 120]].forEach(x => {
+      o.frequency.linearRampToValueAtTime(x[1], x[0]); bp.frequency.linearRampToValueAtTime(x[1] * 2.2, x[0]);
+    });
+    g.gain.setValueAtTime(.5, 0); g.gain.setValueAtTime(.5, .7); g.gain.linearRampToValueAtTime(0, .78);
+    o.connect(bp); bp.connect(g); g.connect(out); o.start(0); o.stop(.8);
+    noise(0, .78, "highpass", 3000, .7, .05);
+  }
+  return render(oc).then(normalize);
+}
+async function padSound(i) {
+  if (padBuf[i]) return padBuf[i];
+  return (padBuf[i] = padCustom[i] ? await decode(padCustom[i].data) : await synthPad(PADS[i].k));
+}
+async function padBytes(i) {
+  if (padCustom[i]) return padCustom[i].data;
+  return padData[i] || (padData[i] = await readFile(wav(await padSound(i))));
+}
+// Индикаторы живут и без воспроизведения, пока звучит пэд
+function idleMeters(sec) {
+  padUntil = Math.max(padUntil, performance.now() + sec * 1000 + 400);
+  if (idleRaf || playing) return;
+  (function loop() {
+    if (playing) { idleRaf = 0; return; }
+    if (performance.now() > padUntil) { idleRaf = 0; resetMeters(); return; }
+    drawMeters(); idleRaf = requestAnimationFrame(loop);
+  })();
+}
+async function hitPad(i) {
+  if (!AC || !OAC) return status(t("audioOff"), true);
+  const c = audio(), el = $("pads").querySelector('[data-pad="' + i + '"]');
+  if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 120); }
+  let b;
+  try { b = await padSound(i); } catch (e) { return status(t("badFile", padName(i)), true); }
+  const s = c.createBufferSource(), g = c.createGain();
+  s.buffer = b; g.gain.value = padVol; s.connect(g);
+  let tmp = null;
+  if (playing && masterNode) g.connect(masterNode);
+  else { tmp = masterChain(c); tapMaster(c, tmp); g.connect(tmp); }   // на паузе — свой выход с лимитером и индикаторами
+  s.onended = () => { try { g.disconnect(); if (tmp) { tmp.disconnect(); tmp.out.disconnect(); } } catch (e) {} };
+  s.start();
+  idleMeters(b.duration);
+  if (padRec) {   // запись в микс: звук встаёт новым треком на место курсора
+    const at = pos(), tr = newTrack(padName(i), await padBytes(i), b);
+    tr.start = at; tr.vol = Math.min(1.5, padVol);
+    tracks.push(tr); dirty = true;
+    renderTracks(); showPos();
+  }
+}
+$("pads").addEventListener("pointerdown", e => {
+  const p = e.target.closest("[data-pad]");
+  if (p) { e.preventDefault(); hitPad(+p.getAttribute("data-pad")); }   // по нажатию, а не по отпусканию — без задержки
+});
+$("pads").addEventListener("click", e => {
+  const up = e.target.closest("[data-pl]"), rs = e.target.closest("[data-rs]");
+  if (up) { padTarget = +up.getAttribute("data-pl"); $("padFile").click(); }
+  if (rs) {
+    const i = +rs.getAttribute("data-rs");
+    padCustom[i] = null; padBuf[i] = null; padData[i] = null;
+    req("readwrite", s => s.delete(i), "pads").catch(() => {});
+    renderPads();
+  }
+});
+$("pads").addEventListener("keydown", e => {   // Enter и пробел на пэде с клавиатуры
+  const p = e.target.closest("[data-pad]");
+  if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); hitPad(+p.getAttribute("data-pad")); }
+});
+$("padFile").onchange = async () => {
+  const f = $("padFile").files[0], i = padTarget; $("padFile").value = "";
+  if (!f || i < 0) return;
+  try {
+    const data = await readFile(f); await decode(data);
+    padCustom[i] = { i: i, name: f.name.replace(/\.[^.]+$/, "").slice(0, 24), data: data };
+    padBuf[i] = null; padData[i] = null;
+    req("readwrite", s => s.put(padCustom[i]), "pads").catch(() => status(t("noDb"), true));
+    renderPads(); status(t("padLoaded", padName(i)));
+  } catch (e) { status(t("badFile", f.name), true); }
+};
+$("padRec").onclick = () => { padRec = !padRec; $("padRec").classList.toggle("on", padRec); };
+$("padVol").oninput = () => { padVol = $("padVol").value / 100; store("mixer.padVol", padVol); };
+(function () { const v = store("mixer.padVol"); if (typeof v === "number") { padVol = v; $("padVol").value = Math.round(v * 100); } })();
+req("readonly", s => s.getAll ? s.getAll() : null, "pads").then(all => { (all || []).forEach(x => { padCustom[x.i] = x; }); renderPads(); }).catch(() => {});
 
 // ---------- Скачать WAV ----------
+// Собрать весь микс в буфер (raw — без общей громкости и лимитера)
+function mixBuffer(raw) {
+  const sr = 44100, tail = tracks.some(tr => tr.echo > 0 || tr.rev > 0) ? 3 : .1;
+  const oc = new OAC(2, Math.ceil((mixLen() + tail) * sr), sr), out = masterChain(oc, raw);
+  tracks.forEach(tr => { if (tlen(tr) > 0) chain(oc, tr, out, tr.start, 0); });
+  return render(oc);
+}
+function download(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+function fileName(ext) { return (mixName || t("untitled")).replace(/[\\/:*?"<>|]+/g, " ").trim() + ext; }
 $("wavBtn").onclick = () => {
   if (!tracks.length) return status(t("needTracks"), true);
   if (!OAC) return status(t("audioOff"), true);
-  const sr = 44100, tail = tracks.some(tr => tr.echo > 0 || tr.rev > 0) ? 3 : .1;
-  const len = Math.ceil((mixLen() + tail) * sr);
   status(t("rendering")); $("wavBtn").disabled = true;
   setTimeout(() => {
-    try {
-      const oc = new OAC(2, len, sr), out = masterChain(oc);
-      tracks.forEach(tr => { if (tlen(tr) > 0) chain(oc, tr, out, tr.start, 0); });
-      oc.oncomplete = ev => {
-        const name = (mixName || t("untitled")).replace(/[\\/:*?"<>|]+/g, " ").trim() + ".wav";
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(wav(ev.renderedBuffer)); a.download = name;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-        status(t("rendered", name)); $("wavBtn").disabled = false;
-      };
-      const p = oc.startRendering();
-      if (p && p.catch) p.catch(err => { status(t("renderFail", err.message || err), true); $("wavBtn").disabled = false; });
-    } catch (err) { status(t("renderFail", err.message || err), true); $("wavBtn").disabled = false; }
+    mixBuffer().then(b => { const name = fileName(".wav"); download(wav(b), name); status(t("rendered", name)); })
+      .catch(err => status(t("renderFail", err && err.message || err), true))
+      .then(() => { $("wavBtn").disabled = false; });
   }, 30);
 };
+
+// ---------- Громкость LUFS: замер всего микса по EBU R128 и подгонка общей громкости ----------
+// Блоки по 400 мс с шагом 100 мс; отбрасываем тишину (−70) и всё, что на 10 LU тише среднего
+async function integrated(buf) {
+  const oc = new OAC(2, buf.length, buf.sampleRate), s = oc.createBufferSource(), k = kFilters(oc);
+  s.buffer = buf; s.connect(k.input); k.output.connect(oc.destination); s.start();
+  const kb = await render(oc), L = kb.getChannelData(0), R = kb.getChannelData(1), hop = Math.round(kb.sampleRate / 10), seg = [];
+  for (let i = 0; i + hop <= L.length; i += hop) {
+    let e = 0;
+    for (let j = i; j < i + hop; j++) e += L[j] * L[j] + R[j] * R[j];
+    seg.push(e);
+  }
+  const blocks = [];
+  for (let i = 0; i + 4 <= seg.length; i++) blocks.push((seg[i] + seg[i + 1] + seg[i + 2] + seg[i + 3]) / (4 * hop));
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  let g = blocks.filter(p => lufsOf(p) > -70);
+  if (!g.length) return -Infinity;
+  const rel = lufsOf(avg(g)) - 10;
+  g = g.filter(p => lufsOf(p) > rel);
+  return lufsOf(avg(g));
+}
+$("loudBtn").onclick = () => {
+  if (!tracks.length) return status(t("needTracks"), true);
+  if (!OAC) return status(t("audioOff"), true);
+  status(t("measuring")); $("loudBtn").disabled = true;
+  setTimeout(async () => {
+    try {
+      const b = await mixBuffer(true), I = await integrated(b);
+      let pk = 0;
+      for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > pk) pk = v; } }
+      if (!isFinite(I)) throw new Error("—");
+      const tg = +$("target").value, want = Math.pow(10, (tg - I) / 20), vol = Math.max(.01, Math.min(1.5, want));
+      master.vol = vol; $("mvol").value = Math.round(vol * 100); store("mixer.vol", vol);
+      if (pk * vol > .9 && !master.limit) { master.limit = true; $("limit").checked = true; store("mixer.limit", true); }   // громче — значит нужен лимитер
+      dirty = true; restart();
+      status(t("loudDone").replace("{a}", num(I)).replace("{p}", num(20 * Math.log10(pk || 1e-9))).replace("{v}", Math.round(vol * 100))
+        .replace("{t}", num(I + 20 * Math.log10(vol))) + (want > 1.5 ? t("loudMax") : ""));
+    } catch (err) { status(t("renderFail", err && err.message || err), true); }
+    $("loudBtn").disabled = false;
+  }, 30);
+};
+$("target").onchange = () => store("mixer.target", $("target").value);
+(function () { const v = store("mixer.target"); if (v) $("target").value = v; })();
 // WAV 16 бит стерео: открывается везде
 function wav(b) {
   const n = b.length, ch = 2, L = b.getChannelData(0), R = b.numberOfChannels > 1 ? b.getChannelData(1) : L;
@@ -1206,18 +1801,23 @@ function wav(b) {
 }
 
 // ---------- Мои миксы: IndexedDB в этом браузере ----------
-const KEYS = ["name", "start", "trimIn", "trimOut", "vol", "pan", "fi", "fo", "lo", "mid", "hi", "rate", "echo", "rev", "mute", "solo"];
+const KEYS = ["name", "color", "start", "trimIn", "trimOut", "vol", "pan", "fi", "fo", "lo", "mid", "hi", "rate", "echo", "rev", "mute", "solo"];
 function db() {
   return new Promise((ok, bad) => {
     if (!window.indexedDB) return bad(new Error("no db"));
-    const r = indexedDB.open("radioMixer", 1);
-    r.onupgradeneeded = () => r.result.createObjectStore("mixes", { keyPath: "id" });
+    const r = indexedDB.open("radioMixer", 2);   // версия 2: добавились свои звуки пэдов
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains("mixes")) d.createObjectStore("mixes", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("pads")) d.createObjectStore("pads", { keyPath: "i" });
+    };
     r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error);
   });
 }
-function req(mode, fn) {
+function req(mode, fn, name) {
+  name = name || "mixes";
   return db().then(d => new Promise((ok, bad) => {
-    const tx = d.transaction("mixes", mode), r = fn(tx.objectStore("mixes"));
+    const tx = d.transaction(name, mode), r = fn(tx.objectStore(name));
     tx.oncomplete = () => ok(r && r.result); tx.onerror = () => bad(tx.error); tx.onabort = () => bad(tx.error);
   }));
 }
@@ -1234,9 +1834,26 @@ function listMixes() {
 $("mixesBtn").onclick = () => { $("mixName").value = mixName || t("untitled"); $("modal").hidden = false; listMixes(); };
 $("mClose").onclick = () => { $("modal").hidden = true; };
 $("modal").onclick = e => { if (e.target === $("modal")) $("modal").hidden = true; };
+// Горячие клавиши. Буквы и цифры — по физической клавише (e.code), чтобы работали и в русской раскладке
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") $("modal").hidden = true;
-  if (e.key === " " && !/INPUT|BUTTON|SELECT/.test(e.target.tagName)) { e.preventDefault(); $("play").click(); }
+  if (e.key === "Escape") { $("modal").hidden = true; $("tlModal").hidden = true; }
+  if (e.ctrlKey || e.metaKey || e.altKey || !$("modal").hidden || !$("tlModal").hidden || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  const code = e.code || "", key = e.key;
+  if (key === " " && e.target.tagName !== "BUTTON") { e.preventDefault(); $("play").click(); return; }
+  const pad = PADS.map(p => "Key" + p.key).indexOf(code);
+  if (pad >= 0) { if (!e.repeat) hitPad(pad); e.preventDefault(); return; }
+  if (!tracks.length) return;
+  let done = true;
+  if (code === "KeyC") splitAt();
+  else if (key === "ArrowLeft" || key === "ArrowRight") seek(pos() + (key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 1 : 5));
+  else if (key === "Home") seek(0);
+  else if (key === "End") seek(mixLen());
+  else if (/^Digit[1-9]$/.test(code) || /^[1-9]$/.test(key)) { const tr = tracks[+(code.slice(-1) || key) - 1]; if (tr) select(tr, true); }
+  else if (code === "KeyM" || code === "KeyS") {
+    const tr = byId(sel) || tracks[0], b = card(tr) && card(tr).querySelector('[data-a="' + (code === "KeyM" ? "mute" : "solo") + '"]');
+    if (b) { select(tr); b.click(); }
+  } else done = false;
+  if (done) e.preventDefault();
 });
 $("saveBtn").onclick = () => {
   if (!tracks.length) return status(t("needTracks"), true);
@@ -1244,7 +1861,7 @@ $("saveBtn").onclick = () => {
   // Одинаковое название — перезаписываем этот микс
   req("readonly", s => s.getAll ? s.getAll() : null).then(all => {
     const same = (all || []).filter(m => m.name === name)[0];
-    const rec = { id: same ? same.id : Date.now(), name: name, saved: Date.now(), master: { vol: master.vol, comp: master.comp },
+    const rec = { id: same ? same.id : Date.now(), name: name, saved: Date.now(), master: { vol: master.vol, comp: master.comp, limit: master.limit },
       tracks: tracks.map(tr => { const o = { data: tr.data }; KEYS.forEach(k => { o[k] = tr[k]; }); return o; }) };
     return req("readwrite", s => s.put(rec));
   }).then(() => { mixName = name; dirty = false; status(t("saved", name)); listMixes(); })
@@ -1264,12 +1881,13 @@ $("mixList").onclick = e => {
       for (const x of m.tracks) {
         status(t("loading", x.name));
         const buf = await decode(x.data), tr = newTrack(x.name, x.data, buf);
+        tr.color = list.length % TC.length;   // в миксах, сохранённых до цветов, цвет по порядку
         KEYS.forEach(k => { if (x[k] !== undefined) tr[k] = x[k]; });
         list.push(tr);
       }
       tracks = list; mixName = m.name; dirty = false; fromPos = 0;
-      master.vol = m.master.vol; master.comp = m.master.comp;
-      $("mvol").value = Math.round(master.vol * 100); $("comp").checked = master.comp;
+      master.vol = m.master.vol; master.comp = m.master.comp; master.limit = m.master.limit !== false;
+      $("mvol").value = Math.round(master.vol * 100); $("comp").checked = master.comp; $("limit").checked = master.limit;
       renderTracks(); showPos(); status(t("opened", m.name));
     }).catch(err => status(t("renderFail", err && err.message || err), true));
   }
@@ -1382,6 +2000,7 @@ window.addEventListener("storage", e => {
 if (!AC) status(t("audioOff"), true);
 applyLang(); showPos();
 applySkin(currentSkin());
+drawSpec(false); drawGonio(null, null);
 </script>
 </body>
 </html>
