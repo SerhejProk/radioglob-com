@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e4e8ee">
-<title>РАДИО</title>
+<title>RadioGlob — интернет-радио онлайн</title>
+<link rel="canonical" href="https://radioglob.com/">
 <meta name="apple-mobile-web-app-title" content="РАДИО">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
@@ -13,7 +14,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <!-- Превью ссылки в Telegram/WhatsApp: пересылать надо ссылку, а не файл -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="РАДИО">
+<meta property="og:title" content="RadioGlob — интернет-радио">
 <meta property="og:description" content="Тысячи радиостанций со всего мира: Россия, Беларусь, Казахстан, жанры, избранное.">
 <meta property="og:url" content="https://radioglob.com/">
 <meta property="og:image" content="https://radioglob.com/icon-512.png">
@@ -1725,14 +1726,16 @@ function stopMarquee(text) {
   const el = $("nowMeta");
   el.className = "meta";
   el.textContent = text;
-  setTitleMarquee("", t("brand"));
+  setTitleMarquee("", PAGE_TITLE);
 }
 // Та же бегущая строка в заголовке вкладки — её видно на кнопке окна в панели задач и при наведении на неё.
 // В свёрнутом окне браузер крутит таймер не чаще раза в секунду — строка бежит медленнее, это нормально
 let titleChars = [], titlePos = 0, titleTimer = null;
+// Название вкладки в покое — из <title>: его же видит Google в результатах поиска
+const PAGE_TITLE = document.title;
 function setTitleMarquee(text, still) {
   clearInterval(titleTimer);
-  if (!text) { document.title = still || t("brand"); return; }
+  if (!text) { document.title = still || PAGE_TITLE; return; }
   titleChars = Array.from(text + "   •   "); // Array.from — чтобы не разрезать эмодзи пополам
   titlePos = 0;
   const tick = () => {
