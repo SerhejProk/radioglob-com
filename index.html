@@ -703,6 +703,10 @@
     .chip { flex: none; white-space: nowrap; }
     .opts { margin-top: 2px; } }
 </style>
+<!-- Статистика посещений GoatCounter: без cookies и без личных данных, отчёты на serhej.goatcounter.com.
+     К адресу страницы добавляется домен, чтобы в одном отчёте различать radioglob.ru, radioglob.com и github.io -->
+<script>window.goatcounter = { path: function (p) { return location.host + p; } };</script>
+<script data-goatcounter="https://serhej.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 <div class="waves" aria-hidden="true"></div>
@@ -1252,6 +1256,12 @@ function store(key, val) {
 }
 let favs = store("radio.favs") || [];
 
+// Событие для статистики GoatCounter (включили станцию, добавили в избранное и т. п.).
+// Если счётчик не загрузился (блокировщик рекламы, нет сети) — просто ничего не делаем
+function track(path, title) {
+  try { if (window.goatcounter && goatcounter.count) goatcounter.count({ path: path, title: title || path, event: true }); } catch (e) {}
+}
+
 // Язык страницы: RU или EN. Выбор запоминается; при первом заходе — по языку браузера
 // (русский, белорусский, казахский, украинский → RU, остальные → EN). Проверка: ?lang=en
 const T = {
@@ -1617,6 +1627,7 @@ function card(s) {
     e.stopPropagation();
     favs = isFav() ? favs.filter(x => x.stationuuid !== s.stationuuid) : [...favs, s];
     store("radio.favs", favs);
+    if (isFav()) track("fav/" + s.name.trim());
     f.className = "fav" + (isFav() ? " on" : "");
     f.textContent = isFav() ? "★" : "☆";
   };
@@ -1644,6 +1655,7 @@ function playStation(s) {
   nowSong = "";
   connect();
   fetch(SERVERS[0] + "/json/url/" + s.stationuuid).catch(() => {}); // учёт прослушивания в каталоге
+  track("play/" + s.name.trim(), (s.countrycode || "") + " " + s.name.trim());
 }
 
 // Подключение к текущему адресу станции. Если за 10 секунд звук не пошёл или пришла ошибка —
@@ -1818,6 +1830,7 @@ $("save").onclick = () => {
     notes.unshift({ song: song, station: name, time: Date.now(), s: current });
     notes = notes.slice(0, 500);
     store("radio.notes", notes);
+    track("track-saved/" + name, song || name);
     $("status").textContent = t("saved") + (song || name) + (song ? " (" + name + ")" : "");
   }
   $("save").classList.add("done");
@@ -1974,6 +1987,7 @@ function openCountry(cc) {
   setCountry(cc);
   const b = document.querySelector('#cchips .chip[data-cc="' + cc + '"]');
   if (b) b.classList.add("on");
+  if (cc) track("country/" + cc);
   if (REGIONS[cc]) loadIds(REGIONS[cc]);
   else if (cc) loadCountry(cc);
   else search({});
