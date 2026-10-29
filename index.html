@@ -1533,7 +1533,7 @@ function render(list) {
     const sorted = g.filter(isSecure).concat(g.filter(st => !isSecure(st))); // https вперёд, иначе по популярности
     const main = sorted[0];
     main.urls = sorted.map(st => st.url_resolved).filter((u, i, a) => a.indexOf(u) === i);
-    if (!main.favicon) { const withLogo = g.find(st => st.favicon); if (withLogo) main.favicon = withLogo.favicon; }
+    if (!logoUrl(main)) { const withLogo = g.find(logoUrl); if (withLogo) main.favicon = withLogo.favicon; }
     lastList.push(main);
   });
   $("status").textContent = lastList.length ? t("found", lastList.length) : "";
@@ -1575,9 +1575,15 @@ function logoEl(s) {
   return d;
 }
 
+// Логотип из каталога — только если это ссылка: у части станций там записано слово "null"
+function logoUrl(s) {
+  const fav = (s.favicon || "").trim();
+  return /^https?:\/\//i.test(fav) ? fav : "";
+}
+
 function logoSources(s) {
   const list = [];
-  const fav = (s.favicon || "").trim();
+  const fav = logoUrl(s);
   if (fav) {
     list.push(fav);
     if (fav.startsWith("http:")) list.push("https:" + fav.slice(5));
