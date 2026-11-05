@@ -1429,16 +1429,22 @@ async function api(path) {
   throw lastErr || new Error(t("catalogDown"));
 }
 
+// Номер показа: если, пока грузится список, открыли другой (избранное, книжку, страну),
+// опоздавший ответ отбрасываем, а не рисуем поверх
+let viewSeq = 0;
+
 // Подборка из конкретных станций по их номерам в каталоге, в заданном порядке
 async function loadIds(ids) {
+  const my = ++viewSeq;
   $("status").textContent = t("loading");
   $("grid").innerHTML = "";
   try {
     let list = await api("/json/stations/byuuid?uuids=" + ids.join(","));
+    if (my !== viewSeq) return;
     list.sort((a, b) => ids.indexOf(a.stationuuid) - ids.indexOf(b.stationuuid));
     render(list);
   } catch (e) {
-    $("status").textContent = t("loadFail");
+    if (my === viewSeq) $("status").textContent = t("loadFail");
   }
 }
 
@@ -1447,14 +1453,16 @@ async function loadIds(ids) {
 async function loadCountry(cc) {
   const ids = PICKS[cc] || [];
   const p = new URLSearchParams({ limit: 120, hidebroken: "true", order: "clickcount", reverse: "true", countrycode: cc });
+  const my = ++viewSeq;
   $("status").textContent = t("loading");
   $("grid").innerHTML = "";
   try {
     const res = await Promise.all([ids.length ? api("/json/stations/byuuid?uuids=" + ids.join(",")) : [], api("/json/stations/search?" + p)]);
+    if (my !== viewSeq) return;
     res[0].sort((a, b) => ids.indexOf(a.stationuuid) - ids.indexOf(b.stationuuid));
     render(res[0].concat(res[1]));
   } catch (e) {
-    $("status").textContent = t("loadFail");
+    if (my === viewSeq) $("status").textContent = t("loadFail");
   }
 }
 
@@ -1463,18 +1471,20 @@ async function search({ name = "", tag = "", country = "" } = {}) {
   if (name) p.set("name", name);
   if (tag) p.set("tag", tag);
   if (country) p.set("countrycode", country);
+  const my = ++viewSeq;
   $("status").textContent = t("loading");
   $("grid").innerHTML = "";
   try {
     let list = await api("/json/stations/search?" + p);
     // Если по названию ничего — пробуем как жанр
-    if (!list.length && name && !tag) {
+    if (!list.length && name && !tag && my === viewSeq) {
       p.delete("name"); p.set("tag", name.toLowerCase());
       list = await api("/json/stations/search?" + p);
     }
+    if (my !== viewSeq) return;
     render(list);
   } catch (e) {
-    $("status").textContent = t("loadFail");
+    if (my === viewSeq) $("status").textContent = t("loadFail");
   }
 }
 
@@ -1636,6 +1646,7 @@ function card(s) {
   f.title = t("favTitle");
   f.onclick = e => {
     e.stopPropagation();
+    favs = store("radio.favs") || favs; // могли поменять в другой вкладке или в установленном приложении
     favs = isFav() ? favs.filter(x => x.stationuuid !== s.stationuuid) : [...favs, s];
     store("radio.favs", favs);
     if (isFav()) track("fav/" + s.name.trim());
@@ -1664,6 +1675,7 @@ function playStation(s) {
 
   urlIndex = 0;
   nowSong = "";
+  clearInterval(songTimer); songSeq++; // ответы «что играет» от прошлой станции больше не принимаем
   connect();
   fetch(SERVERS[0] + "/json/url/" + s.stationuuid).catch(() => {}); // учёт прослушивания в каталоге
   track("play/" + s.name.trim(), (s.countrycode || "") + " " + s.name.trim());
@@ -1671,10 +1683,13 @@ function playStation(s) {
 
 // Подключение к текущему адресу станции. Если за 10 секунд звук не пошёл или пришла ошибка —
 // пробуем следующий адрес той же станции, и только когда адреса кончились, пишем «не отвечает».
-let urlIndex = 0, connectTimer = null;
+// Номер попытки: об одной неудаче браузер сообщает дважды (событие error и отказ play()),
+// поэтому каждая попытка может перейти к следующему адресу только один раз
+let urlIndex = 0, connectTimer = null, connectSeq = 0, failedSeq = -1;
 function connect() {
   const urls = current.urls || [current.url_resolved];
   const url = urls[urlIndex];
+  const my = ++connectSeq;
   clearTimeout(connectTimer);
   if (hls) { hls.destroy(); hls = null; }
   const isHls = /\.m3u8(\?|$)/i.test(url) || (current.hls == 1);
@@ -1682,14 +1697,16 @@ function connect() {
     hls = new Hls();
     hls.loadSource(url);
     hls.attachMedia(audio);
-    hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) nextUrl(); });
+    hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal && my === connectSeq) nextUrl(); });
   } else {
     audio.src = url;
   }
-  audio.play().catch(err => { if (err.name !== "AbortError") nextUrl(); });
+  audio.play().catch(err => { if (err.name !== "AbortError" && my === connectSeq) nextUrl(); });
   connectTimer = setTimeout(nextUrl, 10000);
 }
 function nextUrl() {
+  if (failedSeq === connectSeq) return;
+  failedSeq = connectSeq;
   clearTimeout(connectTimer);
   const urls = current.urls || [current.url_resolved];
   if (urlIndex + 1 < urls.length) {
@@ -1706,7 +1723,7 @@ function nextUrl() {
 // Бегущая строка: что за станция и что играет. Название песни берём из открытых сервисов
 // вещательных платформ (SomaFM, radio.co, AzuraCast, RadioKing) или у сервера Icecast (status-json.xsl).
 // Если станция ничего не сообщает — в строке только станция, страна, жанр и битрейт.
-let nowSong = "", songTimer = null, userPaused = false;
+let nowSong = "", songTimer = null, songSeq = 0, userPaused = false;
 function setMarquee(note) {
   const el = $("nowMeta");
   const parts = [current.name.trim(), countryName(current), (current.tags || "").split(",").filter(Boolean).slice(0, 3).join(", "),
@@ -1776,6 +1793,7 @@ function watchSong() {
   try { u = new URL(url); } catch (e) { return; }
   if (/\.m3u8/i.test(u.pathname)) return;
   const src = songSource(u);
+  const my = ++songSeq;
   const ask = () => {
     const ctrl = window.AbortController ? new AbortController() : null;
     const t = setTimeout(() => ctrl && ctrl.abort(), 5000);
@@ -1783,10 +1801,11 @@ function watchSong() {
       .then(r => r.json())
       .then(d => {
         clearTimeout(t);
+        if (my !== songSeq) return; // пока ждали ответ, переключили станцию
         const title = String(src[1](d) || "").trim();
         if (title && title !== nowSong && !audio.paused) { nowSong = title; setMarquee(); updateSessionTitle(); }
       })
-      .catch(() => { clearTimeout(t); clearInterval(songTimer); }); // сервис не отвечает — больше не спрашиваем
+      .catch(() => { clearTimeout(t); if (my === songSeq) clearInterval(songTimer); }); // сервис не отвечает — больше не спрашиваем
   };
   ask();
   songTimer = setInterval(ask, 20000);
@@ -1803,7 +1822,7 @@ function setMediaSession(s) {
   const art = logoSources(s).slice(0, 1).map(src => ({ src, sizes: "512x512" }));
   navigator.mediaSession.metadata = new MediaMetadata({ title: s.name.trim(), artist: t("brand"), artwork: art });
   navigator.mediaSession.setActionHandler("play", () => playStation(current));
-  navigator.mediaSession.setActionHandler("pause", () => audio.pause());
+  navigator.mediaSession.setActionHandler("pause", () => { clearTimeout(connectTimer); userPaused = true; audio.pause(); });
 }
 
 function failed() {
@@ -1827,7 +1846,18 @@ function noteTime(t) {
   const d = new Date(t);
   return pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
 }
-function notesOpen() { const i = PRESETS.findIndex(p => p.notes); const c = document.querySelectorAll(".chip[data-p]")[i]; return c && c.classList.contains("on"); }
+function chipOpen(key) { const i = PRESETS.findIndex(p => p[key]); const c = document.querySelectorAll(".chip[data-p]")[i]; return !!(c && c.classList.contains("on")); }
+function notesOpen() { return chipOpen("notes"); }
+function showFavs() {
+  viewSeq++;
+  render(favs);
+  if (!favs.length) { $("grid").innerHTML = '<div class="empty"></div>'; $("grid").firstChild.textContent = t("favEmpty"); }
+}
+// Избранное или книжку поменяли в другой вкладке / в установленном приложении — подхватываем сразу
+window.addEventListener("storage", e => {
+  if (e.key === "radio.favs") { favs = store("radio.favs") || []; if (chipOpen("fav")) showFavs(); }
+  else if (e.key === "radio.notes") { notes = store("radio.notes") || []; if (notesOpen()) renderNotes(); }
+});
 $("save").onclick = () => {
   if (!current) return;
   let song = nowSong;
@@ -1837,6 +1867,7 @@ $("save").onclick = () => {
     song = song.trim();
   }
   const name = current.name.trim();
+  notes = store("radio.notes") || notes; // могли дописать в другой вкладке
   if (notes[0] && notes[0].song === song && notes[0].station === name && song) {
     $("status").textContent = t("already");
   } else {
@@ -1881,7 +1912,11 @@ function renderNotes() {
                 '<a target="_blank" rel="noopener" title="' + t("ya") + '" href="https://music.yandex.ru/search?text=' + q + '">Я</a>' : "") +
       '<button type="button" title="' + t("del") + '">✕</button>';
     acts.firstChild.onclick = () => playStation(n.s);
-    acts.lastChild.onclick = () => { notes.splice(i, 1); store("radio.notes", notes); renderNotes(); };
+    acts.lastChild.onclick = () => {
+      // удаляем по времени и станции, а не по номеру: в другой вкладке список мог сдвинуться
+      notes = (store("radio.notes") || notes).filter(x => !(x.time === n.time && x.station === n.station));
+      store("radio.notes", notes); renderNotes();
+    };
     c.appendChild(acts);
     grid.appendChild(c);
   });
@@ -1947,10 +1982,10 @@ PRESETS.forEach((p, i) => {
     if (p.ids) {
       loadIds(p.ids);
     } else if (p.notes) {
+      viewSeq++;
       renderNotes();
     } else if (p.fav) {
-      render(favs);
-      if (!favs.length) { $("grid").innerHTML = '<div class="empty"></div>'; $("grid").firstChild.textContent = t("favEmpty"); }
+      showFavs();
     } else {
       search({ tag: p.tag, country: p.country });
     }
