@@ -358,6 +358,23 @@
   .amb-head button:active { box-shadow: var(--in-sm); }
   .amb-row { display: grid; grid-template-columns: 26px 78px 1fr; align-items: center; gap: 8px; padding: 7px 0; font-size: 14px; }
   .amb-row .vol { width: 100%; }
+  .sleep { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--edge); font-size: 14px; }
+  .sleep-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 6px; }
+  .sleep-btns button { padding: 6px 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--edge); box-shadow: var(--out-sm); }
+  .sleep-btns button.on { box-shadow: var(--in-sm); color: var(--accent); }
+  .sleep-left { font-size: 12px; color: var(--muted); }
+  .save.amb-btn.sleep { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .sotd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 12px 16px; border-radius: 16px; background: var(--bg); border: 1px solid var(--edge); box-shadow: var(--out-sm); }
+  .sotd[hidden] { display: none; }
+  .sotd .tag { font-size: 13px; color: var(--accent); font-weight: 700; }
+  .sotd .nm { font-weight: 700; flex: 1; min-width: 140px; }
+  .sotd .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .sotd button { padding: 8px 16px; border-radius: 999px; font-size: 14px; color: var(--accent); border: 1px solid var(--edge); box-shadow: var(--out-sm); }
+  .a2hs { position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 19; display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: 16px; background: var(--bg); color: var(--text); border: 1px solid var(--edge); box-shadow: var(--out); font-size: 14px; max-width: 520px; margin: 0 auto; }
+  .a2hs[hidden] { display: none; }
+  .a2hs span { flex: 1; }
+  .a2hs button { padding: 6px 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--edge); box-shadow: var(--out-sm); }
   .amb-note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
   .notes-bar { grid-column: 1 / -1; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; color: var(--on-page-muted, var(--muted)); font-size: 13px; }
   .note .info .name { white-space: normal; }
@@ -789,6 +806,7 @@ ym(114096001,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
 
 <main>
   <div class="status" id="status" data-i18n-html="statusInit">Если станции не появляются — откройте радио в Safari или Chrome по ссылке <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a></div>
+  <div class="sotd" id="sotd" hidden></div>
   <div class="grid" id="grid"></div>
   <p class="contact"><span data-i18n="contact">Предложить станцию или написать нам:</span> <a href="mailto:support@radioglob.com">support@radioglob.com</a></p>
   <nav class="contact seo-links"><span data-i18n="moreLists">Подборки:</span>
@@ -823,9 +841,13 @@ ym(114096001,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
     <button type="button" id="ambOff" data-i18n="ambOff">Выключить</button>
   </div>
   <div id="ambRows"></div>
+  <div class="sleep"><b data-i18n="sleep">Таймер сна</b>
+    <div class="sleep-btns" id="sleepBtns"></div>
+    <div class="sleep-left" id="sleepLeft"></div></div>
   <p class="amb-note" data-i18n="ambNote">Звуки рождаются прямо в браузере и звучат поверх любой станции.</p>
 </div>
 
+<div class="a2hs" id="a2hs" hidden role="note"><span id="a2hsText"></span><button type="button" id="a2hsBtn" hidden></button><button type="button" id="a2hsX" aria-label="Закрыть">✕</button></div>
 <audio id="audio" preload="none"></audio>
 
 <script>
@@ -1299,7 +1321,7 @@ const T = {
     openBtn: "Открыть в браузере ↗", openSafari: "Открыть в Safari ↗",
     tgHint: "Если кнопка не сработала: нажмите ⋯ вверху справа → «Открыть в Safari» / «Открыть в браузере».",
     statusInit: 'Если станции не появляются — откройте радио в Safari или Chrome по ссылке <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a>',
-    playTitle: "Играть / пауза", choose: "Выберите станцию", saveTitle: "Записать трек в записную книжку", shareTitle: "Поделиться ссылкой на станцию", linkCopied: "Ссылка скопирована", tapPlay: "Нажмите на станцию, чтобы включить", shareText: "Слушаю {n} на RadioGlob", moreLists: "Подборки:",
+    playTitle: "Играть / пауза", choose: "Выберите станцию", saveTitle: "Записать трек в записную книжку", shareTitle: "Поделиться ссылкой на станцию", linkCopied: "Ссылка скопирована", tapPlay: "Нажмите на станцию, чтобы включить", shareText: "Слушаю {n} на RadioGlob", moreLists: "Подборки:", sotd: "Станция дня", listen: "▶ Слушать", sleep: "Таймер сна", sleepMin: "{n} мин", sleepOff: "Выкл", sleepLeft: "Выключится через {n}", sleepNone: "Не задан", a2hsIos: "Радио под рукой: нажмите «Поделиться» ⎙ и «На экран Домой»", a2hsAndroid: "Радио под рукой: меню браузера ⋮ → «Установить приложение»", a2hsBtn: "Установить",
     quieter: "Тише", louder: "Громче", volume: "Громкость",
     catalogDown: "Каталог недоступен", loading: "Загружаю станции…",
     loadFail: "Не удалось загрузить каталог. Проверьте интернет и попробуйте ещё раз.",
@@ -1313,7 +1335,7 @@ const T = {
     notesEmpty: "Пока пусто. Когда играет песня, нажмите ♥ в плеере внизу — она запишется сюда.",
     notesBar: "Книжка хранится в радио на этом устройстве — на телефоне и компьютере она своя.",
     playSt: "Включить станцию", yt: "Найти на YouTube", ya: "Найти в Яндекс Музыке", del: "Удалить из книжки",
-    theme: "Тема", mixer: "Микшер", amb: "Атмосфера", ambTitle: "Атмосфера: дождь, море, камин", ambPause: "Пауза", ambPlay: "Включить", ambOff: "Выключить",
+    theme: "Тема", mixer: "Микшер", amb: "Атмосфера", ambTitle: "Атмосфера и таймер сна", ambPause: "Пауза", ambPlay: "Включить", ambOff: "Выключить",
     ambNote: "Звуки рождаются прямо в браузере и звучат поверх любой станции.",
     amb_rain: "Дождь", amb_wind: "Ветер", amb_sea: "Море", amb_fire: "Камин", amb_night: "Сверчки", themeLabel: "Тема оформления", roAir: "● В ЭФИРЕ", roPause: "○ ПАУЗА", roCodec: "КОДЕК", roBitrate: "БИТРЕЙТ", roCountry: "СТРАНА"
   },
@@ -1332,7 +1354,7 @@ const T = {
     openBtn: "Open in browser ↗", openSafari: "Open in Safari ↗",
     tgHint: "If the button does not work: tap ⋯ in the top right → “Open in Safari” / “Open in browser”.",
     statusInit: 'If no stations appear, open the radio in Safari or Chrome: <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a>',
-    playTitle: "Play / pause", choose: "Choose a station", saveTitle: "Save the track to the notebook", shareTitle: "Share a link to this station", linkCopied: "Link copied", tapPlay: "Tap the station to play", shareText: "Listening to {n} on RadioGlob", moreLists: "Collections:",
+    playTitle: "Play / pause", choose: "Choose a station", saveTitle: "Save the track to the notebook", shareTitle: "Share a link to this station", linkCopied: "Link copied", tapPlay: "Tap the station to play", shareText: "Listening to {n} on RadioGlob", moreLists: "Collections:", sotd: "Station of the day", listen: "▶ Listen", sleep: "Sleep timer", sleepMin: "{n} min", sleepOff: "Off", sleepLeft: "Stops in {n}", sleepNone: "Not set", a2hsIos: "Keep the radio handy: tap Share ⎙ then “Add to Home Screen”", a2hsAndroid: "Keep the radio handy: browser menu ⋮ → “Install app”", a2hsBtn: "Install",
     quieter: "Quieter", louder: "Louder", volume: "Volume",
     catalogDown: "Catalog unavailable", loading: "Loading stations…",
     loadFail: "Could not load the catalog. Check your connection and try again.",
@@ -1346,7 +1368,7 @@ const T = {
     notesEmpty: "Nothing here yet. When a song is playing, tap ♥ in the player below to save it here.",
     notesBar: "The notebook is stored in the radio on this device — your phone and computer each have their own.",
     playSt: "Play the station", yt: "Search on YouTube", ya: "Search on Yandex Music", del: "Remove from the notebook",
-    theme: "Theme", mixer: "Mixer", amb: "Ambience", ambTitle: "Ambience: rain, sea, fireplace", ambPause: "Pause", ambPlay: "Play", ambOff: "Turn off",
+    theme: "Theme", mixer: "Mixer", amb: "Ambience", ambTitle: "Ambience and sleep timer", ambPause: "Pause", ambPlay: "Play", ambOff: "Turn off",
     ambNote: "The sounds are generated right in your browser and play over any station.",
     amb_rain: "Rain", amb_wind: "Wind", amb_sea: "Sea", amb_fire: "Fireplace", amb_night: "Crickets", themeLabel: "Color theme", roAir: "● ON AIR", roPause: "○ PAUSED", roCodec: "CODEC", roBitrate: "BITRATE", roCountry: "COUNTRY"
   },
@@ -1365,7 +1387,7 @@ const T = {
     openBtn: "Ouvrir dans le navigateur ↗", openSafari: "Ouvrir dans Safari ↗",
     tgHint: "Si le bouton ne marche pas : touchez ⋯ en haut à droite → « Ouvrir dans Safari » / « Ouvrir dans le navigateur ».",
     statusInit: 'Si aucune station n’apparaît, ouvrez la radio dans Safari ou Chrome : <a href="https://radioglob.com/" target="_blank" rel="noopener">radioglob.com</a>',
-    playTitle: "Lecture / pause", choose: "Choisissez une station", saveTitle: "Enregistrer le morceau dans le carnet", shareTitle: "Partager un lien vers cette station", linkCopied: "Lien copié", tapPlay: "Touchez la station pour l’écouter", shareText: "J’écoute {n} sur RadioGlob", moreLists: "Sélections :",
+    playTitle: "Lecture / pause", choose: "Choisissez une station", saveTitle: "Enregistrer le morceau dans le carnet", shareTitle: "Partager un lien vers cette station", linkCopied: "Lien copié", tapPlay: "Touchez la station pour l’écouter", shareText: "J’écoute {n} sur RadioGlob", moreLists: "Sélections :", sotd: "Station du jour", listen: "▶ Écouter", sleep: "Minuterie", sleepMin: "{n} min", sleepOff: "Arrêt", sleepLeft: "Arrêt dans {n}", sleepNone: "Aucune", a2hsIos: "La radio sous la main : touchez Partager ⎙ puis « Sur l’écran d’accueil »", a2hsAndroid: "La radio sous la main : menu ⋮ → « Installer l’application »", a2hsBtn: "Installer",
     quieter: "Moins fort", louder: "Plus fort", volume: "Volume",
     catalogDown: "Catalogue indisponible", loading: "Chargement des stations…",
     loadFail: "Impossible de charger le catalogue. Vérifiez votre connexion et réessayez.",
@@ -1409,6 +1431,7 @@ function applyLang() {
   if (!eu.children.length) EUROPE.forEach(c => { const o = document.createElement("option"); o.value = c[0]; eu.appendChild(o); });
   [].forEach.call(eu.children, (o, i) => { o.textContent = euName(EUROPE[i]); });
   renderSkinOpts();
+  if (typeof renderSotd === "function") renderSotd();
 }
 // Во встроенном браузере Telegram кнопка ведёт во внешний браузер:
 // на айфоне — схема x-safari-https (iOS 17+), на Android — intent, который откроет браузер по умолчанию
@@ -1972,6 +1995,7 @@ function setChip(i) {
   document.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
   if (i >= 0) document.querySelectorAll(".chip[data-p]")[i].classList.add("on");
   setStyleBg(i >= 0 && PRESETS[i].bg);
+  if (typeof updateSotd === "function") updateSotd();
 }
 
 // Фон под стиль музыки: плавно гасим слой, меняем узор, проявляем. Страны, избранное, поиск — обычные радиоволны
@@ -2533,6 +2557,113 @@ function deepLink() {
   }
   if (/^[A-Z]{2}$/.test(cc)) openCountry(cc);
 }
+// «Станция дня»: одна на всех, меняется раз в сутки (по местной дате). Берём из проверенных ручных подборок
+var sotd = null;
+const SOTD_IDS = [...new Set(PRESETS.flatMap(p => p.ids || []))];
+function sotdDay() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); }
+function renderSotd() {
+  const box = $("sotd");
+  if (!box || !sotd) return;
+  box.innerHTML = '<span class="tag"></span><span class="nm"><span class="n"></span><small></small></span><button type="button"></button>';
+  box.querySelector(".tag").textContent = "⭐ " + t("sotd");
+  box.querySelector(".n").textContent = sotd.name.trim();
+  box.querySelector("small").textContent = metaText(sotd);
+  const b = box.querySelector("button");
+  b.textContent = t("listen");
+  b.onclick = () => { track("sotd/" + sotd.name.trim()); playStation(sotd); };
+  updateSotd();
+}
+function updateSotd() {
+  const box = $("sotd");
+  if (!box) return;
+  const on = document.querySelector(".chip.on");
+  const home = !!(on && on.hasAttribute("data-p") && PRESETS[+on.getAttribute("data-p")].home);
+  box.hidden = !(home && sotd && !$("q").value.trim());
+}
+async function loadSotd() {
+  try {
+    const day = sotdDay(), ids = [];
+    for (let k = 0; k < 4; k++) ids.push(SOTD_IDS[(day + k) % SOTD_IDS.length]);
+    const list = (await api("/json/stations/byuuid?uuids=" + ids.join(",")))
+      .filter(s => allowed(s) && /^https:/.test(s.url_resolved || ""));
+    list.sort((a, b) => ids.indexOf(a.stationuuid) - ids.indexOf(b.stationuuid));
+    if (list.length) { sotd = list[0]; renderSotd(); }
+  } catch (e) { /* без станции дня сайт работает как обычно */ }
+}
+
+// Таймер сна: через N минут громкость плавно гаснет за 8 секунд, станция и «атмосфера» останавливаются
+var sleepEnd = 0, sleepTick = null, sleepMinutes = 0;
+const SLEEP_MIN = [15, 30, 60, 90];
+function sleepMark() {
+  const left = sleepEnd ? Math.max(0, sleepEnd - Date.now()) : 0;
+  const mm = Math.floor(left / 60000), ss = Math.floor(left / 1000) % 60;
+  $("sleepLeft").textContent = sleepEnd ? t("sleepLeft", mm + ":" + pad(ss)) : t("sleepNone");
+  $("ambBtn").classList.toggle("sleep", !!sleepEnd);
+  [].forEach.call($("sleepBtns").children, b => {
+    const m = +b.getAttribute("data-m");
+    b.textContent = m ? t("sleepMin", m) : t("sleepOff");
+    b.classList.toggle("on", m ? (sleepEnd > 0 && m === sleepMinutes) : !sleepEnd);
+  });
+}
+function setSleep(min) {
+  clearInterval(sleepTick); sleepEnd = 0; sleepMinutes = 0;
+  if (min > 0) {
+    sleepEnd = Date.now() + min * 60000; sleepMinutes = min;
+    sleepTick = setInterval(sleepStep, 1000);
+    track("sleep/" + min);
+  }
+  sleepMark();
+}
+function sleepStep() {
+  if (!sleepEnd) return;
+  if (sleepEnd - Date.now() <= 0) { sleepFinish(); return; }
+  sleepMark();
+}
+function sleepFinish() {
+  clearInterval(sleepTick); sleepEnd = 0; sleepMinutes = 0; sleepMark();
+  const v0 = audio.volume; let k = 0;
+  const f = setInterval(() => {
+    k++; audio.volume = Math.max(0, v0 * (1 - k / 20));
+    if (k >= 20) {
+      clearInterval(f); audio.pause(); audio.volume = v0;
+      ambPaused = true; if (ambCtx) ambCtx.suspend();
+      ambMark();
+    }
+  }, 400);
+}
+SLEEP_MIN.concat([0]).forEach(m => {
+  const b = document.createElement("button");
+  b.type = "button"; b.setAttribute("data-m", m);
+  b.onclick = () => setSleep(m);
+  $("sleepBtns").appendChild(b);
+});
+sleepMark();
+
+// Подсказка «На экран Домой» на телефоне: через 15 секунд после первого включения станции, закрытая не возвращается 30 дней
+(function () {
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), android = /Android/.test(ua);
+  const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+  if (!(ios || android) || standalone || /\btg\b/.test(document.documentElement.className)) return;
+  const seen = store("radio.a2hs");
+  if (typeof seen === "number" && Date.now() - seen < 30 * 86400000) return;
+  function hide(remember) { $("a2hs").hidden = true; if (remember) store("radio.a2hs", Date.now()); }
+  function show() {
+    if (installPrompt) {
+      $("a2hsText").textContent = t("a2hsAndroid");
+      $("a2hsBtn").textContent = t("a2hsBtn"); $("a2hsBtn").hidden = false;
+      $("a2hsBtn").onclick = () => { track("a2hs/install"); installPrompt.prompt(); hide(true); };
+    } else {
+      $("a2hsText").textContent = t(ios ? "a2hsIos" : "a2hsAndroid");
+    }
+    $("a2hs").hidden = false;
+    track("a2hs/show");
+  }
+  $("a2hsX").onclick = () => hide(true);
+  window.addEventListener("appinstalled", () => hide(true));
+  audio.addEventListener("playing", function once() { audio.removeEventListener("playing", once); setTimeout(show, 15000); });
+})();
+loadSotd();
+
 goHome();
 deepLink();
 </script>
