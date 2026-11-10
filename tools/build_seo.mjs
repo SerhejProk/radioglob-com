@@ -397,7 +397,68 @@ ${ANALYTICS}
 <p>${esc(u.hubIntro)}</p>
 <a class="cta" href="${L === "en" ? "/?lang=en" : "/"}">${u.openPlayer}</a>
 ${groups.map(g => `<h2>${esc(L === "en" ? EN_GROUP[g] || g : g)}</h2>\n<div class="tags">\n${shown.filter(p => p.group === g).map(p => `<a href="${pagePath(p.slug, L)}">${esc(txt(p, L).h1)}</a>`).join("\n")}\n</div>`).join("\n")}
-<footer>${esc(u.hubFooter)}</footer>
+<footer>${esc(u.hubFooter)}${L === "en" ? ' <a href="/en/about/">About RadioGlob</a>' : ""}</footer>
+</div>
+</body>
+</html>
+`;
+}
+
+// Страница «About» на английском (шаг 0.4 плана продвижения). Только факты из заметки проекта.
+function aboutPage() {
+  const title = "About RadioGlob: a free internet radio in your browser";
+  const desc = "RadioGlob is a free internet radio: thousands of stations, genre and country collections, sleep timer, song notebook and an audio mixer. No sign-up.";
+  const feats = [
+    "Thousands of live stations from the open radio-browser.info catalogue, in genre and mood collections (jazz, classical, chill, K-pop, news, kids, language learning and more) and by country",
+    "A “Station of the Day” on the home page",
+    "A sleep timer (15, 30, 60 or 90 minutes) with a gentle fade-out, and an ambience panel",
+    "Favourites and a song notebook: tap the heart while a track is playing to save the song and the station",
+    "Installs like an app on phone and desktop, and the now-playing text scrolls in the window title",
+    "12 visual themes and an English, French and Russian interface",
+    "A separate audio mixer: load your own tracks, trim, fade, equalize, add echo, and export to WAV",
+  ];
+  const faq = [
+    ["Is it free?", "Yes. There is nothing to buy and no account to create."],
+    ["Where do the stations come from?", "From the open radio-browser.info community catalogue. A station plays only if its stream is secure (https), because browsers block insecure streams on a secure site. A small number of stations are intentionally not listed."],
+    ["What do you store about me?", "Your favourites, song notebook, volume and settings stay in your own browser on your own device. The mixer processes your files in the browser: they are never uploaded. To count visits, the site uses GoatCounter (no cookies, no personal data) and Yandex Metrica (which uses cookies)."],
+    ["A station does not play or is missing. What now?", "Write to support@radioglob.com with the station name. Streams change or go offline often, and we check what is reported."],
+  ];
+  const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${SITE}/en/about/">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${SITE}/en/about/">
+<meta property="og:image" content="${SITE}/icon-512.png">
+<style>${CSS}ul.f{padding-left:1.2em}ul.f li{margin:.35em 0}</style>
+<script type="application/ld+json">${safeJson(ld)}</script>
+${ANALYTICS}
+</head>
+<body>
+<div class="w">
+<header class="t"><a href="/?lang=en">📻 RADIO</a> · <a href="/en/radio/" style="font-weight:400">All collections</a></header>
+<h1>About RadioGlob</h1>
+<p>RadioGlob is a free internet radio that runs in your browser, on a phone or a computer. Pick a collection or a country, press play, and listen: no sign-up, nothing to install.</p>
+<a class="cta" href="/?lang=en">▶ Open the player</a>
+<h2>What it does</h2>
+<ul class="f">
+${feats.map(f => `<li>${esc(f)}</li>`).join("\n")}
+</ul>
+<h2>Questions</h2>
+${faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("\n")}
+<h2>Contact</h2>
+<p>Suggestions, a station to add, a stream that does not play: <a href="mailto:support@radioglob.com">support@radioglob.com</a></p>
+<footer>RadioGlob is a free internet radio. Built by one person.</footer>
 </div>
 </body>
 </html>
@@ -443,7 +504,9 @@ if (!only) {
   // хабы и sitemap — только по реально собранным страницам
   fs.writeFileSync(path.join(ROOT, "radio", "index.html"), hub("ru"));
   fs.writeFileSync(path.join(ROOT, "en", "radio", "index.html"), hub("en"));
-  const urls = [`${SITE}/`, `${SITE}/radio/`, `${SITE}/en/radio/`];
+  fs.mkdirSync(path.join(ROOT, "en", "about"), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, "en", "about", "index.html"), aboutPage());
+  const urls = [`${SITE}/`, `${SITE}/radio/`, `${SITE}/en/radio/`, `${SITE}/en/about/`];
   for (const L of ["ru", "en"]) for (const p of PAGES) if (p.built && p.built[L]) urls.push(SITE + pagePath(p.slug, L));
   fs.writeFileSync(path.join(ROOT, "sitemap.xml"),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +

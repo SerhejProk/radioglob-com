@@ -20,6 +20,21 @@
 <meta property="og:image" content="https://radioglob.com/icon-512.png">
 <meta name="description" content="Тысячи радиостанций со всего мира: Россия, Беларусь, Казахстан, жанры, избранное.">
 <script>
+// Если язык задан в адресе (?lang=en или ?lang=fr, ссылки из соцсетей и английских страниц), заголовок вкладки и описание — на этом языке.
+// Без параметра остаются русские: их индексирует Google для главной (canonical — корень сайта).
+(function () {
+  var m = /[?&]lang=(en|fr)\b/.exec(location.search);
+  if (!m) return;
+  var T = {
+    en: ["RadioGlob — free internet radio online", "Thousands of radio stations from all over the world: genres, countries, favourites, sleep timer and an audio mixer. Free, no sign-up."],
+    fr: ["RadioGlob — radio en ligne gratuite", "Des milliers de radios du monde entier : genres, pays, favoris, minuterie de sommeil et mixeur audio. Gratuit, sans inscription."]
+  }[m[1]];
+  document.title = T[0];
+  var d = document.querySelector('meta[name="description"]');
+  if (d) d.setAttribute("content", T[1]);
+})();
+</script>
+<script>
 // Где открыта страница. Радио работает только как сайт в обычном браузере:
 // - файл, пересланный в Telegram, открывается в просмотрщике, где сеть и скрипты не работают;
 // - встроенный браузер Telegram глушит звук, когда сворачиваешь Telegram.
