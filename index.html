@@ -1537,18 +1537,20 @@ async function search({ name = "", tag = "", country = "" } = {}) {
 //    «Дождь», «Эхо», «Медуза», «Белсат», «Еврорадио», «Новая газета Европа», The Insider;
 //    а также спам-станции с тегом «to people of russia…».
 //    Плюс станции, чей сайт или поток в реестре блокировок РКН (сверка 18.10.2026 по antifilter.download):
-//    Yle (Финляндия), LRT (Литва), Sveriges Radio (Швеция), TRM (Молдова), сайт Польского радио, 15min.lt (M-1),
-//    русские службы ERR (Эстония) и LSM (Латвия).
+//    TRM (Молдова), сайт Польского радио, 15min.lt (M-1), русские службы ERR (Эстония) и LSM (Латвия).
+//    Решение Сергея 10.11.2026 («вернуть безопасные»): возвращены RFI, Yle (Финляндия), LRT (Литва) и Sveriges Radio (Швеция) —
+//    они только заблокированы в РФ (РКН / МИД), статуса иноагента или нежелательной организации в открытых источниках нет;
+//    официальные реестры Минюста и Генпрокуратуры напрямую не сверялись. Deutsche Welle остаётся скрытой: с 16.12.2025 в реестре нежелательных организаций.
 //    Повторная проверка 18.10.2026: «Радио Свобода» на Балканах (Slobodna Evropa), «Europa Liberă» (Молдова), «Evropa e Lirë» — семейство RFE/RL;
-//    RFI и Deutsche Welle (rfi.fr, dw.com в реестре); Infovojna (Словакия); Radio Marca; «Радио Лента» (worldreport.today); 90s-eurodance.ru.
+//    RFI (возвращён 10.11.2026) и Deutsche Welle (dw.com в реестре); Infovojna (Словакия); Radio Marca; «Радио Лента» (worldreport.today); 90s-eurodance.ru.
 // 3) Станции 18+: «18+» в названии, эротика и мат (теги erotic, explicit, nsfw).
 //    Radio Essex, «__SEX__» от rautemusik (обычные хиты) и канал The Sex Pistols не задеваем.
 const ADULT_OK = /rautemusik|rm\.fm/i;
 const UA_NAME = /украин|україн|ukrain|ukraiņ|радіо/i;
 const UA_LANG = /^(ukrainian|ukranian|ukrainisch|украинский|українська)$/i;
 const UA_URL = /\/\/[^\/:]*\.ua([\/:]|$)/i;
-const BLOCKED_NAME = /свобода|свабода|svoboda|svaboda|голос америки|voice of america|\bvoa\b|дождь тв|телеканал дождь|tv rain|^эхо( ?fm)?( online)?$|^echo эхо|крым\.? ?реалии|настоящее время|азаттык|azattyk|медуза|meduza|белсат|belsat|еврорадио|euroradio|радио азатлык|slobodna evropa|europa liber[aă]|evropa e lir[eë]|info.?vojna|\brfi\b(?! ?1021)|^\W*(deutsche welle\b|dw\b)/i;
-const BLOCKED_URL = /svoboda\.org|svaboda\.org|rferl\.org|krymr\.com|currenttime\.tv|azattyq\.org|azattyk\.org|azatutyun\.am|ozodi\.org|ozodlik\.org|radiofarda\.com|idelreal\.org|kavkazr\.com|sibreal\.org|severreal\.org|rfe-ingest|rfe0\d\.akacast|radiojar\.com\/hcrb063nn3quv|voanews\.com|golos-ameriki|tvrain|echofm\.online|echo02\.online|noasrv\.caster\.fm:10034|meduza\.io|belsat\.eu|euroradio\.fm|novayagazeta\.eu|theins\.ru|[\/.]yle\.fi|[\/.]lrt\.lt|sverigesradio\.se|[\/.]trm\.md|www\.polskieradio\.pl|[\/.]15min\.lt|rus\.err\.ee|rus\.lsm\.lv|slobodnaevropa\.org|europalibera\.org|evropaelire\.org|[\/.]rfi\.fr|[\/.]dw\.com|infovojna\.|www\.marca\.com|worldreport\.today|90s-eurodance\.ru|[\/.]euronews\.com/i;
+const BLOCKED_NAME = /свобода|свабода|svoboda|svaboda|голос америки|voice of america|\bvoa\b|дождь тв|телеканал дождь|tv rain|^эхо( ?fm)?( online)?$|^echo эхо|крым\.? ?реалии|настоящее время|азаттык|azattyk|медуза|meduza|белсат|belsat|еврорадио|euroradio|радио азатлык|slobodna evropa|europa liber[aă]|evropa e lir[eë]|info.?vojna|^\W*(deutsche welle\b|dw\b)/i;
+const BLOCKED_URL = /svoboda\.org|svaboda\.org|rferl\.org|krymr\.com|currenttime\.tv|azattyq\.org|azattyk\.org|azatutyun\.am|ozodi\.org|ozodlik\.org|radiofarda\.com|idelreal\.org|kavkazr\.com|sibreal\.org|severreal\.org|rfe-ingest|rfe0\d\.akacast|radiojar\.com\/hcrb063nn3quv|voanews\.com|golos-ameriki|tvrain|echofm\.online|echo02\.online|noasrv\.caster\.fm:10034|meduza\.io|belsat\.eu|euroradio\.fm|novayagazeta\.eu|theins\.ru|[\/.]trm\.md|www\.polskieradio\.pl|[\/.]15min\.lt|rus\.err\.ee|rus\.lsm\.lv|slobodnaevropa\.org|europalibera\.org|evropaelire\.org|[\/.]dw\.com|infovojna\.|www\.marca\.com|worldreport\.today|90s-eurodance\.ru|[\/.]euronews\.com/i;
 const BLOCKED_TAG = /to people of russia|\b(erotic|erotica|explicit|nsfw|xxx|porn)\b|18\+/i;
 // 4) Всё, где упоминается Соловьёв (решение Сергея 29.10.2026): в названии, жанрах, адресе сайта или потока.
 //    «Соловей», «соловьи» и т.п. не задеваем.
